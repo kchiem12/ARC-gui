@@ -204,7 +204,7 @@ class Qz(nn.Module):
 if __name__ == '__main__':
 	vhe = VHE(encoder=[Qc(), Qz()],
 		  decoder=Px())
-	vhe = vhe
+	vhe = vhe.cuda()
 	print("created vhe")
 	print("number of parameters is", sum(p.numel() for p in vhe.parameters() if p.requires_grad))
 
@@ -254,9 +254,9 @@ if __name__ == '__main__':
 			# batch.inputs['c'].shape == [batch_size, n_inputs, dim_of_the_pic]
 			# batch.inputs['c'].shape == [32, 2, 10, 32, 32]
 			# TODO should verify whether has the same input dim as example CNN or not
-			inputs = {k:v for k,v in batch.inputs.items()}
+			inputs = {k:v.cuda() for k,v in batch.inputs.items()}
 			sizes = batch.sizes
-			target = batch.target
+			target = batch.target.cuda()
 
 			optimiser.zero_grad()
 			score, kl = vhe.score(inputs=inputs, sizes=sizes, x=target, return_kl=True, kl_factor=kl_factor)
@@ -274,7 +274,7 @@ if __name__ == '__main__':
 
 			#Sampling:
 		for batch in islice(test_data_loader, 1):
-			test_inputs = {k:v for k,v in batch.inputs.items()}
+			test_inputs = {k:v.cuda() for k,v in batch.inputs.items()}
 			print("\nPosterior predictive for test inputs")
 			sampled_x = vhe.sample(inputs={'c':test_inputs['c']}).x 
 			sampled_result = np.array(torch.argmax(sampled_x, dim = 3), dtype = np.int32).tolist()
