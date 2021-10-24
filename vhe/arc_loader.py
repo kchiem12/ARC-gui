@@ -9,7 +9,7 @@ import random
 
 parent_dir = os.path.dirname(os.getcwd())
 arc_train_dir = os.path.join(parent_dir, "ARCdata\\data\\training\\")
-AUGMENT_TIMES = 0
+AUGMENT_TIMES = 10
 
 
 class ArcDataset(Dataset):
