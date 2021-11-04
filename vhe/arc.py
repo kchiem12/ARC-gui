@@ -44,7 +44,7 @@ parser.add_argument('-l', '--lr', type=float,
 					default=0.0002, help='Base learning rate')
 parser.add_argument('-e', '--lr_decay', type=float, default=0.999995,
 					help='Learning rate decay, applied every step of the optimization')
-parser.add_argument('-b', '--batch_size', type=int, default=8, #TODO change back to 32
+parser.add_argument('-b', '--batch_size', type=int, default=32,
 					help='Batch size during training per GPU')
 parser.add_argument('-x', '--max_epochs', type=int,
 					default=5, help='How many epochs to run in total?')

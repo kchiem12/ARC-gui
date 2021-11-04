@@ -61,9 +61,9 @@ class ArcDataset(Dataset):
                 # data augmentation
                 for i in range(AUGMENT_TIMES):
                     # random shuffle all colors except black
-                    one_to_nine = list(range(1,10))
+                    one_to_nine = list(range(0,10))
                     new_color_map = dict(zip((one_to_nine), random.sample(one_to_nine, len(one_to_nine))))
-                    new_color_map[0] = 0
+                    # new_color_map[0] = 0
                     shuffled_in = np.array(list(map(lambda x: new_color_map[x], padded_in)))
                     shuffled_out = np.array(list(map(lambda x: new_color_map[x], padded_out)))
                     processed.append({"pixel" : shuffled_in, "task": cnt})
