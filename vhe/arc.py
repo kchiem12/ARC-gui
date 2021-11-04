@@ -47,7 +47,7 @@ parser.add_argument('-e', '--lr_decay', type=float, default=0.999995,
 parser.add_argument('-b', '--batch_size', type=int, default=32,
 					help='Batch size during training per GPU')
 parser.add_argument('-x', '--max_epochs', type=int,
-					default=5, help='How many epochs to run in total?')
+					default=20, help='How many epochs to run in total?')
 parser.add_argument('-s', '--seed', type=int, default=1,
 					help='Random seed to use')
 parser.add_argument('-an', '--anneal', type=int, default=None,
