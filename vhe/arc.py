@@ -7,14 +7,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim import lr_scheduler
-import torchvision
-from torchvision import datasets, transforms, utils
 from pixelcnn.utils import * 
 from pixelcnn.model import * 
-from PIL import Image
-
 import json
-
 
 #VHE:
 from builtins import super
@@ -223,7 +218,7 @@ if __name__ == '__main__':
 	batch_size = args.batch_size
 
 	data_loader = DataLoader(data=data, labels = {'c':class_labels, 'z':range(len(data))},
-			batch_size=batch_size, k_shot= {'c': n_inputs, 'z': 1})#, transforms=[transform_small_affine, transform_ortho_affine])
+			batch_size=batch_size, k_shot= {'c': n_inputs, 'z': 1})
 
 	#test data:
 	if data_cutoff is not None:
@@ -277,7 +272,7 @@ if __name__ == '__main__':
 			test_inputs = {k:v.cuda() for k,v in batch.inputs.items()}
 			print("\nPosterior predictive for test inputs")
 			sampled_x = vhe.sample(inputs={'c':test_inputs['c']}).x 
-			sampled_result = np.array(torch.argmax(sampled_x, dim = 3), dtype = np.int32).tolist()
+			sampled_result = np.array(torch.argmax(sampled_x.cpu(), dim = 3), dtype = np.int32).tolist()
 			# x_in = torch.tensor(test_inputs['c'])
 			# x_out = torch.tensor(sampled_x)
 			# x_in = np.array(torch.argmax(x_in, dim = 2), dtype = np.int32)
@@ -286,10 +281,6 @@ if __name__ == '__main__':
 			x_in_and_out = list(map(lambda a : {"input":a, "output":a}, sampled_result))
 			with open("samples_epoch_" + str(epoch) + ".json", 'w') as f:
 				json.dump({"train":x_in_and_out}, f)
-
-			# torchvision.utils.save_image([test_inputs['c'][i,j,:,:,:] for j in range(n_inputs) for i in range(args.batch_size)] , "sample_support_epoch_{}.png".format(epoch), padding=5, pad_value=1, nrow=args.batch_size)
-			# torchvision.utils.save_image(sampled_x, "samples_epoch_{}.png".format(epoch), padding=5, pad_value=1, nrow=args.batch_size)
-
 
 		#do testing
 		vhe.train()

@@ -1,14 +1,12 @@
 import os
-import pandas as pd
 import numpy as np
 import json
 import torch
-from torchvision import io
 from torch.utils.data import Dataset, DataLoader
 import random
 
 parent_dir = os.path.dirname(os.getcwd())
-arc_train_dir = os.path.join(parent_dir, "ARCdata\\data\\training\\")
+arc_train_dir = os.path.join(parent_dir, "ARCdata/data/training/")
 AUGMENT_TIMES = 10
 
 
