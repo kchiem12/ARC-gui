@@ -133,17 +133,6 @@ class Px(nn.Module):
 			score = torch.zeros(sample_batch_size)
 
 		return x, score
-
-		
-		# mu, sigma = self.localization_mu(decov), self.localization_sigma(decov)
-		# sigma = sigma.exp()
-		# dist = Normal(mu, sigma)
-		# if x is None:
-		# 	x = dist.rsample()
-		# x = x.reshape(-1, self.x_length)
-		# score = dist.log_prob(x).sum(dim=1)
-		# x = x.reshape(-1, input_channels, input_size, input_size)
-		# return x, score
 		
 class Qc(nn.Module):
 	def __init__(self):
@@ -257,7 +246,7 @@ if __name__ == '__main__':
 			(-score).backward() 
 			optimiser.step()
 			batchnum += 1
-			print("Batch %d Score %3.3f KLc %3.3f KLz %3.3f" % (batchnum, score.item(), kl.c.item(), kl.z.item()),flush=True)
+			# print("Batch %d Score %3.3f KLc %3.3f KLz %3.3f" % (batchnum, score.item(), kl.c.item(), kl.z.item()),flush=True)
 			total_iter = total_iter + 1
 		print("---Epoch %d Score %3.3f KLc %3.3f KLz %3.3f" % (epoch, score.item(), kl.c.item(), kl.z.item()))
 
