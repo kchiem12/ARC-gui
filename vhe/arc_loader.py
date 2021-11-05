@@ -78,10 +78,25 @@ class ArcDataset(Dataset):
             
             return double(doubled)
 
+        def transform(p, trans):
+            """
+            trans = (t, r) 
+            if t == 1, transpose problem p
+            if r == 1, rotate p by 90 degree; r == 2 rotate by 180 degree; r == 3 rotate by 270 degree
+            return transfomed problem p
+            """
+            t, r = trans
+            transformed = p.T if t else p
+            if r == 0: return transformed
+            transformed = np.rot90(transformed)
+            if r == 1: return transformed
+            transformed = np.rot90(transformed)
+            if r == 2: return transformed
+            transformed = np.rot90(transformed)
+            if r == 3: return transformed
+
         cnt = 0
         for filename in filenames:
-
-            if cnt > 50: break # only use a small number of data just to make sure our model is working
 
             f = open(data_dir + filename)
             j = json.load(f)
@@ -90,13 +105,18 @@ class ArcDataset(Dataset):
             processed = []
             self.tasks.append(filename + " in")
             self.tasks.append(filename + " out")
+            transformation = (random.randrange(0,2), random.randrange(0,4))
             for data in datas:
                 d_in = data["input"]; d_out = data["output"]
-                # pad around the input and flat them into a 1D vector
-                padded_in = np.resize(enlarged(d_in), self.size)
-                padded_out = np.resize(enlarged(d_out), self.size)
-                processed.append({"pixel" : padded_in, "task": cnt})
-                processed.append({"pixel" : padded_out, "task": cnt+1})
+                # pad around the input, 
+                # let them go through some transpose/rotate transformation,
+                # and flat them into a 1D vector
+                transfomed_in = transform(enlarged(d_in), transformation)
+                transfomed_out = transform(enlarged(d_out), transformation)
+                transfomed_in = np.resize(transfomed_in, self.size)
+                transfomed_out = np.resize(transfomed_out, self.size)
+                processed.append({"pixel" : transfomed_in, "task": cnt})
+                processed.append({"pixel" : transfomed_out, "task": cnt+1})
 
                 # data augmentation
                 for i in range(AUGMENT_TIMES):
@@ -104,8 +124,8 @@ class ArcDataset(Dataset):
                     one_to_nine = list(range(1,10))
                     new_color_map = dict(zip((one_to_nine), random.sample(one_to_nine, len(one_to_nine))))
                     new_color_map[0] = 0
-                    shuffled_in = np.array(list(map(lambda x: new_color_map[x], padded_in)))
-                    shuffled_out = np.array(list(map(lambda x: new_color_map[x], padded_out)))
+                    shuffled_in = np.array(list(map(lambda x: new_color_map[x], transfomed_in)))
+                    shuffled_out = np.array(list(map(lambda x: new_color_map[x], transfomed_out)))
                     processed.append({"pixel" : shuffled_in, "task": cnt})
                     processed.append({"pixel" : shuffled_out, "task": cnt+1})
             

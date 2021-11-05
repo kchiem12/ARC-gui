@@ -248,7 +248,6 @@ if __name__ == '__main__':
 		for batch in data_loader:
 			# batch.inputs['c'].shape == [batch_size, n_inputs, dim_of_the_pic]
 			# batch.inputs['c'].shape == [32, 2, 10, 32, 32]
-			# TODO should verify whether has the same input dim as example CNN or not
 			inputs = {k:v.cuda() for k,v in batch.inputs.items()}
 			sizes = batch.sizes
 			target = batch.target.cuda()
