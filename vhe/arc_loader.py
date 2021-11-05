@@ -4,6 +4,7 @@ import json
 import torch
 from torch.utils.data import Dataset, DataLoader
 import random
+from math import log2
 
 parent_dir = os.path.dirname(os.getcwd())
 arc_train_dir = os.path.join(parent_dir, "ARCdata/data/training/")
@@ -22,21 +23,60 @@ class ArcDataset(Dataset):
         self.transform = transform
         self.tasks = []
 
-        def pad_around_aux(p):
+        def enlarged(p):
             """
-            returns the picture p padded to a square of len max_len
+            enlarge p to a square of self.max_len, 
+            scale the blocks accordingly
+            """
+            padded_to_2power = pad_around(p)
+            to_max_len = double(padded_to_2power)
+            return to_max_len
+        
+        def pad_around(p):
+            """
+            returns the picture p padded to the closest floor of power of 2
             og p is at the center of padded version of p
             """
-            arr = np.array(p)
+            arr = np.array(p, dtype = np.intc)
             height = len(arr)
             width = len(arr[0])
-            padded = np.zeros((self.max_len, self.max_len)) # 0 is black
-            height_offset = (self.max_len - height) // 2
-            width_offset = (self.max_len - width) // 2
+            base = log2(max(height, width))
+
+            # if current max side is a power of 2, just pad to that length;
+            # if not a power of 2, pad to the 距离最近且比它大的2的幂
+            padded_len = pow(2, int(base)) \
+                         if int(base) == base \
+                         else pow(2, int(base) + 1)
+
+            padded = np.zeros((padded_len, padded_len)) # 0 is black
+            height_offset = (padded_len - height) // 2
+            width_offset = (padded_len - width) // 2
+            
             padded[height_offset : height_offset + height,
                     width_offset : width_offset + width] = arr
             padded = np.array(padded, dtype=np.intc)
-            return padded # np.resize(padded, (1, self.max_len, self.max_len))
+            return padded
+        
+        def double(p):
+            """
+            Requires: p has a length of 2's power
+            Effects: scales p to twice its original length, 
+                     scales each pixel accordingly, so now each 1X1 pixel represents a 4X4 block in the new graph
+            Returns: scaled version of p
+            """
+            og_len = len(p)
+            if og_len >= self.max_len: return np.array(p, dtype=np.intc)
+            
+            doubled_len = og_len * 2
+            doubled = np.zeros((doubled_len, doubled_len))
+            for i in range(og_len):
+                for j in range(og_len):
+                    doubled[2*i][2*j] = p[i][j]
+                    doubled[2*i + 1][2*j] = p[i][j]
+                    doubled[2*i][2*j + 1] = p[i][j]
+                    doubled[2*i + 1][2*j + 1] = p[i][j]
+            
+            return double(doubled)
 
         cnt = 0
         for filename in filenames:
@@ -53,21 +93,22 @@ class ArcDataset(Dataset):
             for data in datas:
                 d_in = data["input"]; d_out = data["output"]
                 # pad around the input and flat them into a 1D vector
-                padded_in = np.resize(pad_around_aux(d_in), self.size)
-                padded_out = np.resize(pad_around_aux(d_out), self.size)
+                padded_in = np.resize(enlarged(d_in), self.size)
+                padded_out = np.resize(enlarged(d_out), self.size)
                 processed.append({"pixel" : padded_in, "task": cnt})
                 processed.append({"pixel" : padded_out, "task": cnt+1})
 
                 # data augmentation
                 for i in range(AUGMENT_TIMES):
                     # random shuffle all colors except black
-                    one_to_nine = list(range(0,10))
+                    one_to_nine = list(range(1,10))
                     new_color_map = dict(zip((one_to_nine), random.sample(one_to_nine, len(one_to_nine))))
-                    # new_color_map[0] = 0
+                    new_color_map[0] = 0
                     shuffled_in = np.array(list(map(lambda x: new_color_map[x], padded_in)))
                     shuffled_out = np.array(list(map(lambda x: new_color_map[x], padded_out)))
                     processed.append({"pixel" : shuffled_in, "task": cnt})
                     processed.append({"pixel" : shuffled_out, "task": cnt+1})
+            
             cnt += 2
             assert cnt <= 802
             self.dataset = self.dataset + processed
