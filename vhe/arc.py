@@ -10,6 +10,7 @@ from torch.optim import lr_scheduler
 from pixelcnn.utils import * 
 from pixelcnn.model import * 
 import json
+from collections import OrderedDict
 
 #VHE:
 from builtins import super
@@ -20,7 +21,7 @@ from torch import nn, optim
 from torch.distributions.normal import Normal
 import math
 
-from vhe import VHE, DataLoader, Transform
+from vhe import VHE, DataLoader
 from arc_loader import ArcDataset
 
 #######pixelcnn options #########
@@ -47,7 +48,7 @@ parser.add_argument('-e', '--lr_decay', type=float, default=0.999995,
 parser.add_argument('-b', '--batch_size', type=int, default=32,
 					help='Batch size during training per GPU')
 parser.add_argument('-x', '--max_epochs', type=int,
-					default=20, help='How many epochs to run in total?')
+					default=10000000, help='How many epochs to run in total?')
 parser.add_argument('-s', '--seed', type=int, default=1,
 					help='Random seed to use')
 parser.add_argument('-an', '--anneal', type=int, default=None,
@@ -70,9 +71,6 @@ torch.manual_seed(args.seed)
 np.random.seed(args.seed)
 
 sample_batch_size = args.batch_size
-obs = (10, 32, 32) 
-rescaling	 = lambda x : (x - .5) * 2.
-flip = lambda x : - x
 kwargs = {'num_workers':1, 'pin_memory':True, 'drop_last':True}
 loss_op = None; sample_op = None
 args.mode = "logistic_mix"
@@ -101,7 +99,7 @@ test_loader = torch.utils.data.DataLoader(ArcDataset(train = False), batch_size=
 # --------- self tuned arguments ---------------
 
 input_channels = 10
-n_inputs = 4 # size of D
+n_inputs = 2 # size of D TODO AUMENTTIMES 大了以后再改回来
 input_size = 32
 z_filter = 8
 c_filter = 4
@@ -111,8 +109,6 @@ class Px(nn.Module):
 		super().__init__()
 		self.decov = nn.ConvTranspose2d(c_filter + z_filter, input_channels, 3)
 		self.x_length = input_channels * input_size * input_size
-		self.localization_mu = nn.Linear(self.x_length, self.x_length)
-		self.localization_sigma = nn.Linear(self.x_length, self.x_length)
 		self.log_softmax = nn.LogSoftmax(dim=1)
 
 
@@ -139,9 +135,15 @@ class Qc(nn.Module):
 		super(Qc, self).__init__()
 		self.kernel_size = 3
 		self.stride = 1
+		self.after1_size = (input_size - self.kernel_size + 1) // self.stride # 30
+		self.c_length = c_filter * self.after1_size* self.after1_size # C' * H' * W'
 		self.conv1 = nn.Conv2d(input_channels, c_filter, kernel_size = self.kernel_size, stride = self.stride)
-		self.after1_size = (input_size - self.kernel_size + 1) // self.stride
-		self.c_length = c_filter * self.after1_size* self.after1_size
+		self.fc = nn.Sequential(OrderedDict([
+			("batch_norm1", nn.BatchNorm1d(self.c_length)),
+			("fc1", nn.Linear(self.c_length, self.c_length))
+		# 	("batch_norm2", nn.BatchNorm1d(self.c_length))
+		# 	# ("fc2", nn.Linear(self.c_length, self.c_length))
+		]))
 		self.localization_mu = nn.Linear(self.c_length, self.c_length)
 		self.localization_sigma = nn.Linear(self.c_length, self.c_length)
 		
@@ -149,8 +151,11 @@ class Qc(nn.Module):
 		# inputs has the shape B * D * C * H * W
 		bd = inputs.reshape(-1, input_channels, input_size, input_size) # BD * C * H * W
 		conved = self.conv1(bd) # BD * C' * H' * W'
-		chw = conved.reshape(-1, n_inputs, c_filter * self.after1_size* self.after1_size) # B * D * C'H'W'
+		chw = conved.reshape(-1, n_inputs, self.c_length) # B * D * C'H'W'
 		pooled = torch.max(chw.permute(0,2,1), dim = 2).values # B * C'H'W'
+		
+		pooled = self.fc(pooled) + pooled
+
 		mu, sigma = self.localization_mu(pooled), self.localization_sigma(pooled)
 		sigma = sigma.exp() # make sure sigma is positive
 		dist = Normal(mu, sigma)
@@ -163,18 +168,36 @@ class Qz(nn.Module):
 	def __init__(self):
 		super(Qz, self).__init__()
 		self.kernel_size = 3
-		self.stride = 1
-		self.conv1 = nn.Conv2d(input_channels, z_filter, kernel_size = self.kernel_size, stride = self.stride)
-		self.after1_size = (input_size - self.kernel_size + 1) // self.stride
+		self.stride = 1		
+		self.after1_size = (input_size - self.kernel_size + 1) // self.stride #30
 		self.z_length = z_filter * self.after1_size* self.after1_size
+		self.c_length = c_filter * self.after1_size* self.after1_size
+		self.conv1 = nn.Conv2d(input_channels, z_filter, kernel_size = self.kernel_size, stride = self.stride)
+		self.fc = nn.Sequential(OrderedDict([
+			("batch_norm1", nn.BatchNorm1d(self.z_length)),
+			("fc1", nn.Linear(self.z_length, self.z_length))
+			# ("batch_norm2", nn.BatchNorm1d(self.z_length))
+			# ("fc2", nn.Linear(self.z_length, self.z_length))
+		]))
+		self.to_zlen = nn.Linear(self.z_length + self.c_length, self.z_length)
+
 		self.localization_mu = nn.Linear(self.z_length, self.z_length)
 		self.localization_sigma = nn.Linear(self.z_length, self.z_length)
 
 	
 	def forward(self, inputs, c, z = None):
-		inputs = inputs.reshape(-1, input_channels, input_size, input_size) # make sure it's B * C * H * W
-		conved = self.conv1(inputs)
-		chw = conved.reshape(-1, self.z_length) # B * C'H'W'
+		# make sure inputs havs the shape B * C * H * W
+		inputs = inputs.reshape(-1, input_channels, input_size, input_size)
+		conved = self.conv1(inputs) # B * C' * H' * W'
+
+		# c = B * C''H'W'
+		c = c.reshape(-1, c_filter, 30, 30) # B * C'' * H' * W'
+		withc = torch.cat((conved, c), dim = 1)
+		chw = withc.reshape(-1, self.z_length + self.c_length) # B * (C'+C'')H'W'
+
+		chw = self.to_zlen(chw)
+		chw = self.fc(chw) + chw
+
 		mu, sigma = self.localization_mu(chw), self.localization_sigma(chw)
 		sigma = sigma.exp() # make sure sigma is positive
 		dist = Normal(mu, sigma)
@@ -203,6 +226,7 @@ if __name__ == '__main__':
 
 	data = torch.cat(data)
 
+	print("There are %d training data" % (len(data)))
 
 	batch_size = args.batch_size
 
@@ -211,9 +235,11 @@ if __name__ == '__main__':
 
 	#test data:
 	if data_cutoff is not None:
-		test_data, test_class_labels = zip(*islice(test_loader, data_cutoff))
+		# test_data, test_class_labels = zip(*islice(test_loader, data_cutoff))
+		test_data, test_class_labels = zip(*islice(train_loader, data_cutoff))
 	else:
-		test_data, test_class_labels = zip(*test_loader)
+		# test_data, test_class_labels = zip(*test_loader)
+		test_data, test_class_labels = zip(*train_loader)
 	test_data = torch.cat(test_data)
 	print("test dataset size", test_data.size())
 
@@ -224,15 +250,15 @@ if __name__ == '__main__':
 	# Training
 	print("started training")
 
-	optimiser = optim.Adam(vhe.parameters(), lr=1e-3)
+	optimiser = optim.Adam(vhe.parameters(), lr=1e-4)
 	scheduler = lr_scheduler.StepLR(optimiser, step_size=1, gamma=args.lr_decay)
 
 	total_iter = 0
-	for epoch in range(args.max_epochs):
+	for epoch in range(1, args.max_epochs + 1):
 
 		kl_factor = min((epoch-1)/args.anneal, 1) if args.anneal else 1
 		
-		print("kl_factor:", kl_factor)
+		# print("kl_factor:", kl_factor)
 		batchnum = 0
 		for batch in data_loader:
 			# batch.inputs['c'].shape == [batch_size, n_inputs, dim_of_the_pic]
@@ -248,27 +274,24 @@ if __name__ == '__main__':
 			batchnum += 1
 			# print("Batch %d Score %3.3f KLc %3.3f KLz %3.3f" % (batchnum, score.item(), kl.c.item(), kl.z.item()),flush=True)
 			total_iter = total_iter + 1
-		print("---Epoch %d Score %3.3f KLc %3.3f KLz %3.3f" % (epoch, score.item(), kl.c.item(), kl.z.item()))
+		s, klc, klz = score.item(), kl.c.item(), kl.z.item()
+		print("---Epoch %d Score %3.3f KLc %3.3f KLz %3.3f Reconstruction Error %3.3f"
+			  % (epoch, s, klc, klz, klc+klz+s))
 
-		if epoch %5==0: 
-			torch.save(vhe.state_dict(), './VHE_pixelCNN_epoch_{}.p'.format(epoch))
+		if epoch % 1000==0: 
+			torch.save(vhe.state_dict(), './model/VHE_epoch_{}.p'.format(epoch))
 			print("saved model")
 
-
-			#Sampling:
-		for batch in islice(test_data_loader, 1):
-			test_inputs = {k:v.cuda() for k,v in batch.inputs.items()}
-			print("\nPosterior predictive for test inputs")
-			sampled_x = vhe.sample(inputs={'c':test_inputs['c']}).x 
-			sampled_result = np.array(torch.argmax(sampled_x.cpu(), dim = 3), dtype = np.int32).tolist()
-			# x_in = torch.tensor(test_inputs['c'])
-			# x_out = torch.tensor(sampled_x)
-			# x_in = np.array(torch.argmax(x_in, dim = 2), dtype = np.int32)
-			# x_out = np.array(torch.argmax(x_out, dim = 1).numpy(), dtype = np.int32)
-			# x_in_and_out = list(map(lambda a,b : {"input":a, "output":b}, zip(x_in,x_out)))
-			x_in_and_out = list(map(lambda a : {"input":a, "output":a}, sampled_result))
-			with open("samples_epoch_" + str(epoch) + ".json", 'w') as f:
-				json.dump({"train":x_in_and_out}, f)
+		#Sampling:
+		if epoch % 500==0: 
+			for batch in islice(test_data_loader, 1):
+				test_inputs = {k:v.cuda() for k,v in batch.inputs.items()}
+				print("\nPosterior predictive for test inputs")
+				sampled_x = vhe.sample(inputs={'c':test_inputs['c']}).x 
+				sampled_result = np.array(torch.argmax(sampled_x.cpu(), dim = 3), dtype = np.int32).tolist()
+				x_in_and_out = list(map(lambda a : {"input":a, "output":a}, sampled_result))
+				with open("./result/samples_epoch_" + str(epoch) + ".json", 'w') as f:
+					json.dump({"train":x_in_and_out}, f)
 
 		#do testing
 		vhe.train()

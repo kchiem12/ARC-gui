@@ -8,12 +8,12 @@ from math import log2
 
 parent_dir = os.path.dirname(os.getcwd())
 arc_train_dir = os.path.join(parent_dir, "ARCdata/data/training/")
-AUGMENT_TIMES = 10
+AUGMENT_TIMES = 0
 
 
 class ArcDataset(Dataset):
 
-    def __init__(self, data_dir = arc_train_dir, train = True, transform = None):
+    def __init__(self, data_dir = arc_train_dir, train = True, transform = None, specific_task = None, input = True):
         
         filenames = os.listdir(data_dir)
 
@@ -22,6 +22,7 @@ class ArcDataset(Dataset):
         self.dataset = []
         self.transform = transform
         self.tasks = []
+        self.specific_task = specific_task
 
         def enlarged(p):
             """
@@ -98,38 +99,48 @@ class ArcDataset(Dataset):
         cnt = 0
         for filename in filenames:
 
+            if not self.specific_task == None: 
+                if not filename == self.specific_task: continue
+
+            if cnt > 10: break # only use a small number for testing
+
             f = open(data_dir + filename)
             j = json.load(f)
             datas = j["train"] if train else j["test"]
 
             processed = []
             self.tasks.append(filename + " in")
-            self.tasks.append(filename + " out")
-            transformation = (random.randrange(0,2), random.randrange(0,4))
+            # self.tasks.append(filename + " out")
+            # transformation = (random.randrange(0,2), random.randrange(0,4)) \
+            #                  if train \
+            #                  else (0,0)
+            transformation = (0,0)
             for data in datas:
-                d_in = data["input"]; d_out = data["output"]
+                d_in = data["input"]; 
+                # d_out = data["output"]
                 # pad around the input, 
                 # let them go through some transpose/rotate transformation,
                 # and flat them into a 1D vector
                 transfomed_in = transform(enlarged(d_in), transformation)
-                transfomed_out = transform(enlarged(d_out), transformation)
+                # transfomed_out = transform(enlarged(d_out), transformation)
                 transfomed_in = np.resize(transfomed_in, self.size)
-                transfomed_out = np.resize(transfomed_out, self.size)
+                # transfomed_out = np.resize(transfomed_out, self.size)
                 processed.append({"pixel" : transfomed_in, "task": cnt})
-                processed.append({"pixel" : transfomed_out, "task": cnt+1})
+                # processed.append({"pixel" : transfomed_out, "task": cnt+1})
 
                 # data augmentation
-                for i in range(AUGMENT_TIMES):
-                    # random shuffle all colors except black
-                    one_to_nine = list(range(1,10))
-                    new_color_map = dict(zip((one_to_nine), random.sample(one_to_nine, len(one_to_nine))))
-                    new_color_map[0] = 0
-                    shuffled_in = np.array(list(map(lambda x: new_color_map[x], transfomed_in)))
-                    shuffled_out = np.array(list(map(lambda x: new_color_map[x], transfomed_out)))
-                    processed.append({"pixel" : shuffled_in, "task": cnt})
-                    processed.append({"pixel" : shuffled_out, "task": cnt+1})
+                if train:
+                    for _ in range(AUGMENT_TIMES):
+                        # random shuffle all colors except black
+                        one_to_nine = list(range(1,10))
+                        new_color_map = dict(zip((one_to_nine), random.sample(one_to_nine, len(one_to_nine))))
+                        new_color_map[0] = 0
+                        shuffled_in = np.array(list(map(lambda x: new_color_map[x], transfomed_in)))
+                        # shuffled_out = np.array(list(map(lambda x: new_color_map[x], transfomed_out)))
+                        processed.append({"pixel" : shuffled_in, "task": cnt})
+                        # processed.append({"pixel" : shuffled_out, "task": cnt+1})
             
-            cnt += 2
+            cnt += 1
             assert cnt <= 802
             self.dataset = self.dataset + processed
         

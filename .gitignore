@@ -2,4 +2,5 @@ Resources/
 vhe_impl/
 *.pyc
 vhe/.ipynb_checkpoints/
-vhe/*.p
+*.p
+.vscode/
