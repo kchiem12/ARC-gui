@@ -15,7 +15,8 @@ from collections import OrderedDict
 #VHE:
 from builtins import super
 import random
-MODEL = "./archive/4_deeper_network_better_result.p"
+# MODEL = "./archive/4_deeper_network_better_result.p"
+MODEL = "./model/VHE_epoch_139000.p"
 
 import torch
 from torch import nn, optim
@@ -49,7 +50,7 @@ parser.add_argument('-e', '--lr_decay', type=float, default=0.999995,
 parser.add_argument('-b', '--batch_size', type=int, default=32,
 					help='Batch size during training per GPU')
 parser.add_argument('-x', '--max_epochs', type=int,
-					default=10, help='How many epochs to run in total?')
+					default=2, help='How many epochs to run in total?')
 parser.add_argument('-s', '--seed', type=int, default=1,
 					help='Random seed to use')
 parser.add_argument('-an', '--anneal', type=int, default=None,
@@ -99,7 +100,7 @@ train_loader = torch.utils.data.DataLoader(ArcDataset(), batch_size=1,
 
 task_name = "0520fde7.json"
 
-test_loader = torch.utils.data.DataLoader(ArcDataset(specific_task=task_name), batch_size=1, 
+test_loader = torch.utils.data.DataLoader(ArcDataset(train = True, specific_task=None), batch_size=1, 
 						shuffle=True, **kwargs)
 
 
@@ -107,27 +108,44 @@ test_loader = torch.utils.data.DataLoader(ArcDataset(specific_task=task_name), b
 # --------- self tuned arguments ---------------
 
 input_channels = 10
-n_inputs = 4 # size of D
+n_inputs = 2 # size of D TODO AUMENTTIMES 大了以后再改回来
 input_size = 32
-z_filter = 8
-c_filter = 4
+z_filter = 16
+c_filter = 16
+kernel_size = 3
+num_conv = 4
+stride = 1
 
 class Px(nn.Module):
 	def __init__(self):
 		super().__init__()
-		self.decov = nn.ConvTranspose2d(c_filter + z_filter, input_channels, 3)
+		self.after_conv_size = input_size + num_conv * (1 - kernel_size) # 32 - 6 * (3-1) = 20
+		self.cz_filter = c_filter + z_filter
+		self.deconv = nn.Sequential(OrderedDict([
+			("deconv1", nn.ConvTranspose2d(self.cz_filter, self.cz_filter, kernel_size)),
+			("batch_norm_conv1", nn.BatchNorm2d(self.cz_filter)),
+			("deconv2", nn.ConvTranspose2d(self.cz_filter, self.cz_filter, kernel_size)),
+			("batch_norm_conv2", nn.BatchNorm2d(self.cz_filter)),
+			("deconv3", nn.ConvTranspose2d(self.cz_filter, self.cz_filter, kernel_size)),
+			("batch_norm_conv3", nn.BatchNorm2d(self.cz_filter)),
+			("deconv4", nn.ConvTranspose2d(self.cz_filter, input_channels, kernel_size)),
+			("batch_norm_conv4", nn.BatchNorm2d(input_channels))
+			# ("deconv5", nn.ConvTranspose2d(self.cz_filter, self.cz_filter, kernel_size)),
+			# ("batch_norm_conv5", nn.BatchNorm2d(self.cz_filter)),
+			# ("deconv6", nn.ConvTranspose2d(self.cz_filter, input_channels, kernel_size))
+		]))
+
+
 		self.x_length = input_channels * input_size * input_size
 		self.log_softmax = nn.LogSoftmax(dim=1)
 
 
 	def forward(self, c, z, x = None):
 		# c, z = B * C'H'W' 其中他们的 channel 数 C' 不相同
-		c = c.reshape(-1, c_filter, 30, 30)
-		z = z.reshape(-1, z_filter, 30, 30)
+		c = c.reshape(-1, c_filter, self.after_conv_size, self.after_conv_size)
+		z = z.reshape(-1, z_filter, self.after_conv_size, self.after_conv_size)
 		cz = torch.cat((c, z), dim=1)
-		# decov = (self.decov(cz)).reshape(-1, input_size, input_size, input_channels) # B * H * W * C
-		# predict = torch.argmax(decov.Softmax(dim = 3), dim = 3)
-		decov = (self.decov(cz)) # B*C*H*W
+		decov = self.deconv(cz) # B*C*H*W
 		pred = self.log_softmax(decov) # softmax on color dimension 
 		if x is not None: # training stage
 			cross_entropy = x * pred
@@ -141,16 +159,25 @@ class Px(nn.Module):
 class Qc(nn.Module):
 	def __init__(self):
 		super(Qc, self).__init__()
-		self.kernel_size = 3
-		self.stride = 1
-		self.after1_size = (input_size - self.kernel_size + 1) // self.stride # 30
-		self.c_length = c_filter * self.after1_size* self.after1_size # C' * H' * W'
-		self.conv1 = nn.Conv2d(input_channels, c_filter, kernel_size = self.kernel_size, stride = self.stride)
+		self.after_conv_size = input_size + num_conv * (1 - kernel_size) # 32 - 6 * (3-1) = 20
+		self.c_length = c_filter * self.after_conv_size * self.after_conv_size # C' * H' * W'
+		self.conv = nn.Sequential(OrderedDict([
+			("c_conv1", nn.Conv2d(input_channels, c_filter, kernel_size = kernel_size, stride = stride)),
+			("c_batch_norm_conv1", nn.BatchNorm2d(c_filter)),
+			("c_conv2", nn.Conv2d(c_filter, c_filter, kernel_size = kernel_size, stride = stride)),
+			("c_batch_norm_conv2", nn.BatchNorm2d(c_filter)),
+			("c_conv3", nn.Conv2d(c_filter, c_filter, kernel_size = kernel_size, stride = stride)),
+			("c_batch_norm_conv3", nn.BatchNorm2d(c_filter)),
+			("c_conv4", nn.Conv2d(c_filter, c_filter, kernel_size = kernel_size, stride = stride)),
+			("c_batch_norm_conv4", nn.BatchNorm2d(c_filter))
+			# ("c_conv5", nn.Conv2d(c_filter, c_filter, kernel_size = kernel_size, stride = stride)),
+			# ("c_batch_norm_conv5", nn.BatchNorm2d(c_filter)),
+			# ("c_conv6", nn.Conv2d(c_filter, c_filter, kernel_size = kernel_size, stride = stride)),
+			# ("c_batch_norm_conv6", nn.BatchNorm2d(c_filter))			
+		]))
 		self.fc = nn.Sequential(OrderedDict([
-			("batch_norm1", nn.BatchNorm1d(self.c_length)),
-			("fc1", nn.Linear(self.c_length, self.c_length))
-		# 	("batch_norm2", nn.BatchNorm1d(self.c_length))
-		# 	# ("fc2", nn.Linear(self.c_length, self.c_length))
+			("c_batch_norm_fc1", nn.BatchNorm1d(self.c_length)),
+			("c_fc1", nn.Linear(self.c_length, self.c_length))
 		]))
 		self.localization_mu = nn.Linear(self.c_length, self.c_length)
 		self.localization_sigma = nn.Linear(self.c_length, self.c_length)
@@ -158,7 +185,7 @@ class Qc(nn.Module):
 	def forward(self, inputs, c = None):
 		# inputs has the shape B * D * C * H * W
 		bd = inputs.reshape(-1, input_channels, input_size, input_size) # BD * C * H * W
-		conved = self.conv1(bd) # BD * C' * H' * W'
+		conved = self.conv(bd) # BD * C' * H' * W'
 		chw = conved.reshape(-1, n_inputs, self.c_length) # B * D * C'H'W'
 		pooled = torch.max(chw.permute(0,2,1), dim = 2).values # B * C'H'W'
 		
@@ -175,19 +202,31 @@ class Qc(nn.Module):
 class Qz(nn.Module):
 	def __init__(self):
 		super(Qz, self).__init__()
-		self.kernel_size = 3
-		self.stride = 1		
-		self.after1_size = (input_size - self.kernel_size + 1) // self.stride #30
-		self.z_length = z_filter * self.after1_size* self.after1_size
-		self.c_length = c_filter * self.after1_size* self.after1_size
-		self.conv1 = nn.Conv2d(input_channels, z_filter, kernel_size = self.kernel_size, stride = self.stride)
+		self.after_conv_size = input_size + num_conv * (1 - kernel_size) # 32 - 6 * (3-1) = 20
+		self.c_length = c_filter * self.after_conv_size * self.after_conv_size # C' * H' * W'
+		self.z_length = z_filter * self.after_conv_size * self.after_conv_size
+		# self.conv1 = nn.Conv2d(input_channels, z_filter, kernel_size = kernel_size, stride = stride)
+		self.conv = nn.Sequential(OrderedDict([
+			("z_conv1", nn.Conv2d(input_channels, z_filter, kernel_size = kernel_size, stride = stride)),
+			("z_batch_norm_conv1", nn.BatchNorm2d(z_filter)),
+			("z_conv2", nn.Conv2d(z_filter, z_filter, kernel_size = kernel_size, stride = stride)),
+			("z_batch_norm_conv2", nn.BatchNorm2d(z_filter)),
+			("z_conv3", nn.Conv2d(z_filter, z_filter, kernel_size = kernel_size, stride = stride)),
+			("z_batch_norm_conv3", nn.BatchNorm2d(z_filter)),
+			("z_conv4", nn.Conv2d(z_filter, z_filter, kernel_size = kernel_size, stride = stride)),
+			("z_batch_norm_conv4", nn.BatchNorm2d(z_filter))
+			# ("z_conv5", nn.Conv2d(z_filter, z_filter, kernel_size = kernel_size, stride = stride)),
+			# ("z_batch_norm_conv5", nn.BatchNorm2d(z_filter)),
+			# ("z_conv6", nn.Conv2d(z_filter, z_filter, kernel_size = kernel_size, stride = stride)),
+			# ("z_batch_norm_conv6", nn.BatchNorm2d(z_filter))			
+		]))
+		self.to_zlen = nn.Linear(self.z_length + self.c_length, self.z_length)
 		self.fc = nn.Sequential(OrderedDict([
-			("batch_norm1", nn.BatchNorm1d(self.z_length)),
-			("fc1", nn.Linear(self.z_length, self.z_length))
+			("z_batch_norm1", nn.BatchNorm1d(self.z_length)),
+			("z_fc1", nn.Linear(self.z_length, self.z_length))
 			# ("batch_norm2", nn.BatchNorm1d(self.z_length))
 			# ("fc2", nn.Linear(self.z_length, self.z_length))
 		]))
-		self.to_zlen = nn.Linear(self.z_length + self.c_length, self.z_length)
 
 		self.localization_mu = nn.Linear(self.z_length, self.z_length)
 		self.localization_sigma = nn.Linear(self.z_length, self.z_length)
@@ -196,10 +235,10 @@ class Qz(nn.Module):
 	def forward(self, inputs, c, z = None):
 		# make sure inputs havs the shape B * C * H * W
 		inputs = inputs.reshape(-1, input_channels, input_size, input_size)
-		conved = self.conv1(inputs) # B * C' * H' * W'
+		conved = self.conv(inputs) # B * C' * H' * W'
 
 		# c = B * C''H'W'
-		c = c.reshape(-1, c_filter, 30, 30) # B * C'' * H' * W'
+		c = c.reshape(-1, c_filter, self.after_conv_size, self.after_conv_size) # B * C'' * H' * W'
 		withc = torch.cat((conved, c), dim = 1)
 		chw = withc.reshape(-1, self.z_length + self.c_length) # B * (C'+C'')H'W'
 

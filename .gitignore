@@ -4,3 +4,4 @@ vhe_impl/
 vhe/.ipynb_checkpoints/
 *.p
 .vscode/
+vhe/train.sub
