@@ -43,7 +43,7 @@ def paint_objects(canvas, objs_to_draw):
 		quadrant of this coordinate system. 
 	"""
 	for i in range(len(objs_to_draw)):
-		print("Drawing the %dth object" %(i))
+		# print("Drawing the %dth object" %(i))
 		obj_to_draw = objs_to_draw[i]
 		obj = obj_to_draw[0]
 		x1 = obj_to_draw[1]
