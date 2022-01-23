@@ -5,3 +5,4 @@ vhe/.ipynb_checkpoints/
 *.p
 .vscode/
 vhe/train.sub
+GARC/test.py

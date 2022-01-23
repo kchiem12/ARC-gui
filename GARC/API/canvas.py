@@ -1,3 +1,4 @@
+from tkinter.tix import MAX
 import numpy as np
 import random
 from API.color import *
@@ -41,13 +42,16 @@ def paint_objects(canvas, objs_to_draw):
 		system at point (`x`, `y`) on `canvas` and draw `obj` on the `dir` 
 		quadrant of this coordinate system. 
 	"""
-	for obj_to_draw in objs_to_draw:
+	for i in range(len(objs_to_draw)):
+		print("Drawing the %dth object" %(i))
+		obj_to_draw = objs_to_draw[i]
 		obj = obj_to_draw[0]
 		x1 = obj_to_draw[1]
 		y1 = obj_to_draw[2]
 		dir = obj_to_draw[3] % 4
 
-		obj = rotate_90(obj, dir)
+		if not (length(obj) == 1 or width(obj) == 1):
+			obj = rotate_90(obj, dir)
 		l = len(obj)
 		w = len(obj[0])
 		x2 = x1 + l * dir_map[dir][0]
@@ -106,7 +110,7 @@ def rand_position(canvas):
 			if rand_bool(p): lst.append((i, j))
 	return lst
 
-def rand_division(n = 1, m = 1, l = 1):
+def rand_division(n = 1, m = 1, l = 1, min_dis = 1, max_dis = 100000):
 	"""
 	Divide number `l` into 1~`n` divisions, each division contains `m` numbers
 
@@ -119,6 +123,12 @@ def rand_division(n = 1, m = 1, l = 1):
 		Number of numbers in each division, by default 1
 	l : int, optional
 		Number to divide, by default 1
+	min_dis: int, optional
+		Minimum distance required between the first and the last point in the span,
+		by default 1
+	max_dis: int, optional
+		Maximum distance required between the first and the last point in the span,
+		by default 100000
 
 	Returns
 	-------
@@ -128,21 +138,46 @@ def rand_division(n = 1, m = 1, l = 1):
 		A list of n' tuples, where n' is a random number from [1, `n`]
 		Each tuple represents a division. Each division has `m` numbers
 		xij (i <= n', j <= m) represents the jth number in division i
-		The list is sorted: x11 < x12 < ... < x21 < x22 < ...	
+		The list is sorted: x11 < x12 < ... < x21 < x22 < ...
+
+	Raises
+	------
+	Error if l < n*m: there are not enough elements to divide
+	Error if cannot generate a valid division within MAX_TRY times
 	"""
+
+	MAX_TRY = 10
 	flat = n == 1 or m == 1
-	n = random.randint(1, n)
-	print("n %d, m %d" %(n, m))
-	pool = [i for i in range(l)]
-	random.shuffle(pool)
-	lst = sorted(pool[:n*m])
-	if flat: return lst
-	this_division = []
-	result = []
-	print(lst)
-	for i in range(n*m):
-		this_division.append(lst[i])
-		if (i+1) % m == 0:
-			result.append(this_division)
-			this_division = []
-	return result
+	if l < n*m: raise "No enough elements to divide"
+
+	def helper(n, m, l):
+		n = random.randint(1, n)
+		print("n %d, m %d" %(n, m))
+		pool = [i for i in range(l)]
+		random.shuffle(pool)
+		lst = sorted(pool[:n*m])
+		if flat: return lst
+		this_division = []
+		result = []
+		for i in range(n*m):
+			this_division.append(lst[i])
+			if (i+1) % m == 0:
+				result.append(this_division)
+				this_division = []
+		return result
+	
+	for i in range(MAX_TRY):
+		valid = True
+		result = helper(n, m, l)
+		if flat:
+			for i in range(len(result)-1):
+				dis = result[i+1] - result[i]
+				valid = valid and min_dis <= dis and dis <= max_dis
+		else:
+			for div in result:
+				dis = div[-1] - div[0]
+				valid = valid and min_dis <= dis and dis <= max_dis
+		if valid: return result
+	
+	raise "Can't Generate Valid Division"
+	
