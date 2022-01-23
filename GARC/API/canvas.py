@@ -64,7 +64,7 @@ def paint_objects(canvas, objs_to_draw):
 		
 		for i in range(abs(xe - xs)):
 			for j in range(abs(ye - ys)):
-				canvas[i + xs][j + ys] = obj[i][j] if obj[i][j] != Black else canvas[i + xs][j + ys]
+				canvas[i + xs][j + ys] = obj[i][j] if obj[i][j] != Color.Black else canvas[i + xs][j + ys]
 	return canvas
 
 def paint_points(canvas, points, color = None):
