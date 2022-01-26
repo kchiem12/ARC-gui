@@ -17,15 +17,17 @@ color = rand_color()
 in_canvas = new_canvas(3, 3)
 in_position = rand_position(in_canvas)
 in_canvas = paint_points(in_canvas, in_position, color)
+print("----input----")
 display(in_canvas)
 
 
 #generating the output
 out_canvas = new_canvas(6, 3)
-rotated_in = rotate_90(in_canvas, 2)
+rotated_in = flip_x(in_canvas)
 out_canvas = paint_points(out_canvas, in_position, color)
-obj_list = [(rotated_in, 3, 0, 1)] #for the parameter of creating the object on canvas
+obj_list = [(rotated_in, 3, 0, 0)] #for the parameter of creating the object on canvas
 out_canvas = paint_objects(out_canvas, obj_list)
+print("----output----")
 display(out_canvas)
 
 
