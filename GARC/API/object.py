@@ -17,7 +17,7 @@ def line(x = 1, y = 1, c = None):
 	if c == None: c = rand_color()
 
 	if x == 1 or y == 1: return np.full((x,y), c, dtype=int)
-	if x == 0 or y == 0: return np.full((1,1), Black, dtype=int) # Black means nothing
+	if x == 0 or y == 0: return np.full((1,1), Color.Black, dtype=int) # Black means nothing
 	elif x == y:
 		arr = np.zeros((x, y), dtype=int)
 		for i in range(x):

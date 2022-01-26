@@ -17,9 +17,11 @@ input_canvas = paint_objects(input_canvas,
 							 [[left_object, 0, 0, 0],
 							  [vertical_line(3, Color.Gray), 3, 0, 0],
 							  [right_object, 4, 0, 0]])
+print("----input----")
 display(input_canvas)
 
 output_canvas = new_canvas(3, 3)
 overlapped_points = list(filter(lambda x: x in right_points, left_points))
 output_canvas = paint_points(output_canvas, overlapped_points, Color.Red)
+print("----output----")
 display(output_canvas)

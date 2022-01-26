@@ -152,7 +152,7 @@ def rand_division(n = 1, m = 1, l = 1, min_dis = 1, max_dis = 100000):
 
 	def helper(n, m, l):
 		n = random.randint(1, n)
-		print("n %d, m %d" %(n, m))
+		# print("n %d, m %d" %(n, m))
 		pool = [i for i in range(l)]
 		random.shuffle(pool)
 		lst = sorted(pool[:n*m])

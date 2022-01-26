@@ -11,6 +11,6 @@ display(in_canvas)
 
 
 out_canvas = new_canvas(9, 9)
-out_obj = map_list(lambda x : (in_canvas, 3 * x[0], 3 * x[1], 0), in_pos)
+out_obj = list(map(lambda x : (in_canvas, 3 * x[0], 3 * x[1], 0), in_pos))
 out_canvas = paint_objects(out_canvas, out_obj)
 display(out_canvas)

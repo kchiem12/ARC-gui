@@ -6,3 +6,5 @@ vhe/.ipynb_checkpoints/
 .vscode/
 vhe/train.sub
 GARC/test.py
+ARCdata/apps/
+ARCdata/data/

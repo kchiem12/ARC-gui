@@ -1,12 +1,8 @@
-from inspect import getclosurevars
-from tkinter import colorchooser
-
-from numpy import diagonal
 from API.canvas import *
 from API.object import *
 from API.color import *
 
-color_choice = rand_division(1, 3, 10)
+color_choice = rand_sample(3, non_black_colors)
 print("color choices are ", color_choice)
 c1 = color_choice[0]
 c2 = color_choice[1]
@@ -27,8 +23,8 @@ output_canvas = paint_objects(output_canvas,
 							   [diagonal_line(3, c2), 4, 0, 0],
 							   [diagonal_line(2, c3), 5, 0, 0],
 							   [diagonal_line(1, c1), 6, 0, 0]])
-display(output_canvas)
 
+# helper function to generate the inputs
 def get_x(x): return 0 if x <= 6 else x-6
 def get_y(y): return 6-y if y <= 6 else 0
 def get_length(l): return 7 - abs(l - 6)
@@ -38,16 +34,21 @@ def get_color(l):
 	elif remainder == 1: return c2
 	else: return c3
 
-# There are a toal 13 diagonal lines, randomly select 3 of them as the inputs
-# Order them from the upper left - origin - lower right
-input_position = rand_division(1, 3, 13)
-print("position choices are ", input_position)
+# There are a toal 13 diagonal lines, order them from 
+# the upper left - origin - lower right
+# Among these diagonal lines, we must randomly select 3, each with a different 
+# color. These 3 lines will be shown as input
 p1 = 0 + rand_division(1, 1, 5)[0] * 3
 p2 = 1 + rand_division(1, 1, 4)[0] * 3
 p3 = 2 + rand_division(1, 1, 4)[0] * 3
+print("position choices are ", [p1, p2 ,p3])
 input_canvas = new_canvas(7, 7)
 input_canvas = paint_objects(input_canvas,
 							  [[diagonal_line(get_length(p1), get_color(p1)), get_x(p1), get_y(p1), 0], 
 							   [diagonal_line(get_length(p2), get_color(p2)), get_x(p2), get_y(p2), 0], 
 							   [diagonal_line(get_length(p3), get_color(p3)), get_x(p3), get_y(p3), 0]])
+
+print("----input----")
 display(input_canvas)
+print("----output----")
+display(output_canvas)
