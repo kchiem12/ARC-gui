@@ -54,3 +54,9 @@ def rand_sample(n, l):
 
 def closed_interval(s, e):
 	return [i for i in range(s, e+1)]
+
+def hd(l):
+	return l[0]
+
+def tl(l):
+	return l[1:] if len(l)>0 else None

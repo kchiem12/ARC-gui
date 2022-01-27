@@ -12,13 +12,13 @@ def new_canvas(x, y):
 	"""
 	return np.zeros((x, y),dtype=int)
 
-def length(canvas):
+def x_length(canvas):
 	"""
 	Returns the length of this canvas along x-axis
 	"""
 	return len(canvas)
 
-def width(canvas):
+def y_length(canvas):
 	"""
 	Returns the length of this canvas along y-axis
 	"""
@@ -42,6 +42,7 @@ def paint_objects(canvas, objs_to_draw):
 		system at point (`x`, `y`) on `canvas` and draw `obj` on the `dir` 
 		quadrant of this coordinate system. 
 	"""
+	canvas = np.array(canvas)
 	for i in range(len(objs_to_draw)):
 		# print("Drawing the %dth object" %(i))
 		obj_to_draw = objs_to_draw[i]
@@ -50,7 +51,7 @@ def paint_objects(canvas, objs_to_draw):
 		y1 = obj_to_draw[2]
 		dir = obj_to_draw[3] % 4
 
-		if not (length(obj) == 1 or width(obj) == 1):
+		if not (x_length(obj) == 1 or y_length(obj) == 1):
 			obj = rotate_90(obj, dir)
 		l = len(obj)
 		w = len(obj[0])
@@ -78,6 +79,7 @@ def paint_points(canvas, points, color = None):
 	color : Color literal, optional
 		color these points should be painted with, by default None
 	"""
+	canvas = np.array(canvas)
 	color = rand_color() if color == None else color
 	for (i, j) in points:
 		canvas[i][j] = color
@@ -105,8 +107,8 @@ def rand_position(canvas):
 	"""
 	lst = []
 	p = random.random()
-	for i in range(length(canvas)):
-		for j in range(width(canvas)):
+	for i in range(x_length(canvas)):
+		for j in range(y_length(canvas)):
 			if rand_bool(p): lst.append((i, j))
 	return lst
 

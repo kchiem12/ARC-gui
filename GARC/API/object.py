@@ -32,11 +32,11 @@ def rectangle(x = 1, y = 1, c = None):
 	if c == None: c = rand_color()
 	return np.full((x,y), c, dtype=int)
 
-def random_object(x = 1, y = 1, c = None):
+def random_object(x = 1, y = 1, c = None, p = None):
 	"""
 	Draws a random object inside the rectangle `x` times `y`
 	"""
-	p = random.random()
+	p = random.random() if p == None else p
 	arr = np.zeros((x, y), dtype=int)
 	if c == None: c = rand_color()
 

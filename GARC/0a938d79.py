@@ -1,4 +1,5 @@
 from doctest import OutputChecker
+from tkinter import colorchooser
 from API.canvas import *
 from API.object import *
 from API.color import *
@@ -10,9 +11,9 @@ output_canvas = new_canvas(l, w)
 starting_positions = rand_division(1, 2, int(l / 2))
 s1 = starting_positions[0]
 s2 = starting_positions[1]
-c1 = rand_color()
-remaining_colors = list(filter(lambda x : x != c1, non_black_colors))
-c2 = rand_sample(1, remaining_colors)
+color_choices = rand_sample(2, non_black_colors)
+c1 = color_choices[0]
+c2 = color_choices[1]
 
 print("starting from ", starting_positions)
 
@@ -23,8 +24,8 @@ p1_within_canvas = list(filter(lambda x : x<l, positions1))
 positions2 = list(map(lambda x : x*dis + s2, closed_interval(0, l)))
 p2_within_canvas = list(filter(lambda x : x<l, positions2))
 
-o1 = vertical_line(width(output_canvas), c1)
-o2 = vertical_line(width(output_canvas), c2)
+o1 = vertical_line(y_length(output_canvas), c1)
+o2 = vertical_line(y_length(output_canvas), c2)
 for p1 in p1_within_canvas:
 	output_canvas = paint_objects(output_canvas, [[o1, p1, 0, 0]])
 for p2 in p2_within_canvas:

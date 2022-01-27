@@ -8,7 +8,7 @@ output_objects = []
 def gen_input_obj(lower_y, upper_y):
 	color = rand_color()
 	dis_y = upper_y - lower_y
-	upper_x = rand_division(1, 2, length(input_canvas) - dis_y + 1, min_dis=2)
+	upper_x = rand_division(1, 2, x_length(input_canvas) - dis_y + 1, min_dis=2)
 	print("Let's look at start and endpoint of upper parallel line")
 	print(upper_x)
 	upper_xs = upper_x[0]
@@ -34,7 +34,7 @@ def gen_input_obj(lower_y, upper_y):
 input_canvas = new_canvas(10, 15)
 output_canvas = new_canvas(10, 15)
 
-l = rand_division(3, 2, 15, min_dis=2, max_dis=length(input_canvas))
+l = rand_division(3, 2, 15, min_dis=2, max_dis=x_length(input_canvas))
 print(l)
 
 for i in range(len(l)):
