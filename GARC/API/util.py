@@ -31,9 +31,9 @@ def flip_y(arr):
 	"""
 	return np.flip(arr, 1)
 
-def rand_sample(n, l):
+def rand_sample(n, l, with_replacement = False):
 	"""
-	Returns `n` elements randomly sampled from `l` without replacement
+	Returns `n` elements randomly sampled from `l`, default without replacement
 
 	Parameters
 	----------
@@ -42,6 +42,9 @@ def rand_sample(n, l):
 	l : list or int
 		If l is a list: we sample from l,
 		If l is an int: we sample from [0 - n]
+	with_replacement : bool, optional
+		If True, sample with replacement
+		If False, sample without replacement; default is False
 
 	Returns
 	-------
@@ -49,8 +52,11 @@ def rand_sample(n, l):
 		sampled elements
 	"""
 	pool = l if type(l) == list else [i for i in range(l)]
-	random.shuffle(pool)
-	return pool[:n] if n>1 else pool[0]
+	if with_replacement:
+		return random.choices(pool, k=n)
+	else:
+		random.shuffle(pool)
+		return pool[:n] if n>1 else pool[0]
 
 def closed_interval(s, e):
 	return [i for i in range(s, e+1)]

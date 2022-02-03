@@ -1,4 +1,3 @@
-from doctest import OutputChecker
 from API.canvas import *
 from API.object import *
 from API.color import *
