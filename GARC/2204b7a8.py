@@ -23,10 +23,10 @@ out_canvas = new_canvas(10, 10)
 #To more easily determine which points are on which half, the list of points are divided into two
 if dir_canvas: 
 	points_halfone = rand_position(new_canvas(5, 10))
-	points_halftwo = list(map(lambda x : (x[0]+5, x[1]), rand_position(new_canvas(5, 5))))
+	points_halftwo = list(map(lambda x : (x[0]+5, x[1]), rand_position(new_canvas(5, 10))))
 else: 
 	points_halfone = rand_position(new_canvas(10, 5))
-	points_halftwo = list(map(lambda x : (x[0], x[1]+5), rand_position(new_canvas(5, 5))))
+	points_halftwo = list(map(lambda x : (x[0], x[1]+5), rand_position(new_canvas(10, 5))))
 
 
 in_canvas = paint_points(in_canvas, points_halfone, 3)
