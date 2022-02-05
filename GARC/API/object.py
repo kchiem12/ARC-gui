@@ -1,6 +1,7 @@
 import numpy as np
 from API.color import *
 from API.util import *
+from API.exception import *
 
 """
 Object function always takes a parameter `c`, specifying the color of this object.
@@ -23,7 +24,7 @@ def line(x = 1, y = 1, c = None):
 		for i in range(x):
 			arr[i][i] = c
 		return arr
-	else: raise "Line: can only draw parallel, vertical, or diagonal"
+	else: raise InvalidCommand("Line: can only draw parallel, vertical, or diagonal")
 
 def rectangle(x = 1, y = 1, c = None):
 	"""

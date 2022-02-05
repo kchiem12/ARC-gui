@@ -1,8 +1,8 @@
-from tkinter.tix import MAX
 import numpy as np
 import random
 from API.color import *
 from API.util import *
+from API.exception import *
 
 dir_map = [[1,1], [1,-1], [-1,-1], [-1,1]]
 
@@ -150,7 +150,7 @@ def rand_division(n = 1, m = 1, l = 1, min_dis = 1, max_dis = 100000):
 
 	MAX_TRY = 10
 	flat = n == 1 or m == 1
-	if l < n*m: raise "No enough elements to divide"
+	if l < n*m: raise ExecutionFailed("No enough elements to divide")
 
 	def helper(n, m, l):
 		n = random.randint(1, n)
@@ -181,5 +181,5 @@ def rand_division(n = 1, m = 1, l = 1, min_dis = 1, max_dis = 100000):
 				valid = valid and min_dis <= dis and dis <= max_dis
 		if valid: return result
 	
-	raise "Can't Generate Valid Division"
+	raise ExecutionFailed("Can't Generate Valid Division")
 	

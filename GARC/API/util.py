@@ -1,7 +1,7 @@
 import random
 import numpy as np
 
-def rand_bool(prob):
+def rand_bool(prob = None):
 	"""
 	Returns True with probability `prob` (0~1)
 	"""
