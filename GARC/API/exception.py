@@ -1,6 +1,6 @@
 class InvalidCommand(Exception):
 	"""
-	Raised when function call do not satisfy requirement. 
+	Raised when function call does not satisfy requirement. 
 	"""
 	def __init__(self, *args):
 		if args:

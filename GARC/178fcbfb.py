@@ -61,8 +61,8 @@ def generate_problem():
 		else:
 			return (parallel_line(x_len, c), 0, y, 0)
 
-	remaining_red_outputs = list(filter(is_red, remaining_points))
-	remaining_nonred_outputs = list(filter(lambda x: not is_red(x), remaining_points))
+	remaining_red_outputs = list(filter(lambda x: is_red(x[2]), remaining_points))
+	remaining_nonred_outputs = list(filter(lambda x: not is_red(x[2]), remaining_points))
 	remaining_red_objects = list(map(lambda x : gen_output_obj(x[0], x[1], x[2]), remaining_red_outputs))
 	remaining_nonred_objects = list(map(lambda x : gen_output_obj(x[0], x[1], x[2]), remaining_nonred_outputs))
 

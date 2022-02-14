@@ -1,9 +1,10 @@
 import json
+import os
 import numpy as np
 from API.exception import *
-TASK_NAME = "c9e6f938"
-GEN_NUM = 10
-GARC_ABSOLUTE_PATH = "D:/Cornell/Research/ARC/GARC/"
+
+TASK_NAME = "178fcbfb" # The name of the task to generate samples for
+GEN_NUM = 10 # Number of input output pair we want to generate
 
 input_canvases = []
 output_canvases = []
@@ -30,6 +31,8 @@ for i in range(GEN_NUM):
 
 print("Generate %d %s tasks, %d successful, %d failed" %(GEN_NUM, TASK_NAME, len(jsonfile["train"]), GEN_NUM - len(jsonfile["train"])))
 
-with open(GARC_ABSOLUTE_PATH + "samples/" + TASK_NAME + ".json", 'w') as f:
+current_path = os.getcwd()
+GARC_path = current_path if current_path[-4:] == "GARC" else current_path + "/GARC"
+with open(GARC_path + "/samples/" + TASK_NAME + ".json", 'w') as f:
 	json.dump(jsonfile, f)
 

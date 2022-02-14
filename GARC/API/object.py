@@ -3,6 +3,8 @@ from API.color import *
 from API.util import *
 from API.exception import *
 
+MAX_LENGTH = int(10e5)
+
 """
 Object function always takes a parameter `c`, specifying the color of this object.
 If c is not given (None), objects is assigned a random non-black color.
