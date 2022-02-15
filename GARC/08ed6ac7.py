@@ -20,17 +20,17 @@ def generate_problem():
 
 	# Paint the columns in ascending order of height:
 	output_canvas = paint_objects(output_canvas,
-								[[vertical_line(heights[0], Color.Yellow), x_coors[0], 0, 0],
-								[vertical_line(heights[1], Color.Green), x_coors[1], 0, 0],
-								[vertical_line(heights[2], Color.Red), x_coors[2], 0, 0],
-								[vertical_line(heights[3], Color.Cobalt), x_coors[3], 0, 0]])
+								[[vertical_line(heights[0], Color.Yellow), x_coors[0], 0],
+								[vertical_line(heights[1], Color.Green), x_coors[1], 0],
+								[vertical_line(heights[2], Color.Red), x_coors[2], 0],
+								[vertical_line(heights[3], Color.Cobalt), x_coors[3], 0]])
 
 	input_canvas = new_canvas(9, 9)
 	input_canvas = paint_objects(input_canvas,
-								[[vertical_line(heights[0], Color.Gray), x_coors[0], 0, 0],
-								[vertical_line(heights[1], Color.Gray), x_coors[1], 0, 0],
-								[vertical_line(heights[2], Color.Gray), x_coors[2], 0, 0],
-								[vertical_line(heights[3], Color.Gray), x_coors[3], 0, 0]])
+								[[vertical_line(heights[0], Color.Gray), x_coors[0], 0],
+								[vertical_line(heights[1], Color.Gray), x_coors[1], 0],
+								[vertical_line(heights[2], Color.Gray), x_coors[2], 0],
+								[vertical_line(heights[3], Color.Gray), x_coors[3], 0]])
 
 	print("----input----")
 	display(input_canvas)

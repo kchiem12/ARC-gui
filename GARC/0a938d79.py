@@ -30,12 +30,12 @@ def generate_problem():
 	positions2 = list(map(lambda x : x*dis + s2, closed_interval(0, l)))
 	p2_within_canvas = list(filter(lambda x : x<l, positions2))
 
-	o1 = vertical_line(y_length(output_canvas), c1)
-	o2 = vertical_line(y_length(output_canvas), c2)
+	o1 = vertical_ray(c1)
+	o2 = vertical_ray(c2)
 	for p1 in p1_within_canvas:
-		output_canvas = paint_objects(output_canvas, [[o1, p1, 0, 0]])
+		output_canvas = paint_objects(output_canvas, [[o1, p1, 0]])
 	for p2 in p2_within_canvas:
-		output_canvas = paint_objects(output_canvas, [[o2, p2, 0, 0]])
+		output_canvas = paint_objects(output_canvas, [[o2, p2, 0]])
 
 	input_canvas = new_canvas(l, w)
 	input_canvas = paint_points(input_canvas, [(s1, w-1)], c1)

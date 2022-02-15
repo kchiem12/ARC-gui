@@ -19,7 +19,7 @@ def generate_problem():
 
 	output_canvas = new_canvas(9, 9)
 	out_obj = list(map(lambda x : (input_canvas, 3 * x[0], 3 * x[1], 0), in_pos))
-	output_canvas = paint_objects(output_canvas, out_obj)
+	output_canvas = paint_canvas(output_canvas, out_obj)
 	display(output_canvas)
 
 	return

@@ -21,10 +21,13 @@ def generate_problem():
 
 	# To be consistent with later drawing output, instead of `paint_points`,
 	# we use `paint_objects` here
+	def gen_input_obj(x, y, c):
+		return (vertical_line(1, c), x, y)
+
 	input_canvas = new_canvas(x_len, y_len)
-	base_red_point = (vertical_line(1, Color.Red), xs[0], ys[0], 0)
-	base_green_point = (vertical_line(1, Color.Green), xs[1], ys[1], 0)
-	base_cobalt_point = (vertical_line(1, Color.Cobalt), xs[2], ys[2], 0)
+	base_red_point = (gen_input_obj(xs[0], ys[0], Color.Red))
+	base_green_point = (gen_input_obj(xs[1], ys[1], Color.Green))
+	base_cobalt_point = (gen_input_obj(xs[2], ys[2], Color.Cobalt))
 	print("Base Points are ", list(zip(xs[:3], ys[:3], [Color.Red, Color.Green, Color.Cobalt])))
 
 	remaining_point_number = point_number - 3
@@ -33,8 +36,6 @@ def generate_problem():
 
 	def is_red(c): return c == Color.Red
 
-	def gen_input_obj(x, y, c):
-		return (vertical_line(1, c), x, y, 0)
 
 	remaining_xs = xs[3:]
 	remaining_ys = ys[3:]
@@ -51,15 +52,15 @@ def generate_problem():
 
 
 	output_canvas = new_canvas(x_len, y_len)
-	base_red_line = (vertical_line(y_len, Color.Red), xs[0], 0, 0)
-	base_green_line = (parallel_line(x_len, Color.Green), 0, ys[1], 0)
-	base_cobalt_line = (parallel_line(x_len, Color.Cobalt), 0, ys[2], 0)
+	base_red_line = (vertical_ray(Color.Red), xs[0], 0)
+	base_green_line = (parallel_ray(Color.Green), 0, ys[1])
+	base_cobalt_line = (parallel_ray(Color.Cobalt), 0, ys[2])
 
 	def gen_output_obj(x, y, c):
 		if c == Color.Red:
-			return (vertical_line(y_len, c), x, 0, 0)
+			return (vertical_ray(c), x, 0)
 		else:
-			return (parallel_line(x_len, c), 0, y, 0)
+			return (parallel_ray(c), 0, y)
 
 	remaining_red_outputs = list(filter(lambda x: is_red(x[2]), remaining_points))
 	remaining_nonred_outputs = list(filter(lambda x: not is_red(x[2]), remaining_points))

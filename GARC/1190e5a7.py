@@ -25,19 +25,22 @@ def generate_problem():
 	x_sep_positions = rand_division(5, 1, x_len - 2, 2)
 	x_sep_positions = list(map(lambda x : x+1, x_sep_positions))
 	x_sep_num = len(x_sep_positions)
-	x_seperators = list(map(lambda pos : [vertical_line(y_len, line_color), pos, 0, 0], x_sep_positions))
+	x_seperators = list(map(lambda pos : [vertical_ray(line_color), pos, 0], x_sep_positions))
 
 	y_sep_positions = rand_division(5, 1, y_len - 2, 2)
 	y_sep_positions = list(map(lambda x : x+1, y_sep_positions))
 	y_sep_num = len(y_sep_positions)
-	y_seperators = list(map(lambda pos : [parallel_line(x_len, line_color), 0, pos, 0], y_sep_positions))
+	y_seperators = list(map(lambda pos : [parallel_ray(line_color), 0, pos], y_sep_positions))
 
+	input_canvas = new_canvas(x_len, y_len)
 	background = rectangle(x_len, y_len, background_color)
-	input_canvas = paint_objects(background, x_seperators)
+	input_canvas = paint_objects(input_canvas, [[background, 0, 0]])
+	input_canvas = paint_objects(input_canvas, x_seperators)
 	input_canvas = paint_objects(input_canvas, y_seperators)
 
+	output_canvas = new_canvas(x_sep_num+1, y_sep_num+1)
 	output_object = rectangle(x_sep_num+1, y_sep_num+1, background_color)
-	output_canvas = output_object
+	output_canvas = paint_objects(output_canvas, [[output_object, 0, 0]])
 
 	print("----input----")
 	display(input_canvas)
@@ -55,4 +58,3 @@ def get_output_canvas():
 
 if __name__ == "__main__":
 	generate_problem()
-	print(input_canvas)
