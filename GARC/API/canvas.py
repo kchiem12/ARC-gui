@@ -6,6 +6,11 @@ from API.exception import *
 
 dir_map = [[1,1], [1,-1], [-1,-1], [-1,1]]
 
+"""
+Canvas is a numpy array specifying what color each position has
+canvas[x][y] = color
+"""
+
 def new_canvas(x, y):
 	"""
 	Returns a canvas with x-axis of length `x` and y-axis of length `y`
@@ -27,17 +32,18 @@ def y_length(canvas):
 def paint_objects(canvas, objs_to_draw):
 	"""
 	Returns a new canvas with objects specified by `objs_to_draw` painted on `canvas`
+	Caution: The use of dir parameter should be very limited
 
 	Parameters
 	----------
 	canvas : numpy.array
 		Original canvas to draw the objects on
 	objs_to_draw : list
-		A list containing a description for each objects to draw:
-		For each object to draw, such description is in the format [obj, x, y, dir]:
+		A list containing a description for each object to draw,
+		such description is in the format [obj, x, y, dir]:
 			obj (Object): An object to be drawn
 			x, y (int): the x and y coordinates starting from which we draw this object `obj`
-			dir (int): the quadrant in which we will draw the object `obj`
+			dir (int): the quadrant in which we will draw the object `obj`, optional and default 0
 		To draw the `obj` according to `x`, `y`, `dir`, we first draw a coordinate
 		system at point (`x`, `y`) on `canvas` and draw `obj` on the `dir` 
 		quadrant of this coordinate system. 
@@ -60,19 +66,20 @@ def paint_objects(canvas, objs_to_draw):
 
 def paint_canvas(canvas, canvases_to_draw):
 	"""
-	Returns a new canvas with objects specified by `objs_to_draw` painted on `canvas`
+	Returns a new canvas with canvases specified by `canvases_to_draw` painted on `canvas`
+	
 	Parameters
 	----------
 	canvas : numpy.array
 		Original canvas to draw the objects on
-	objs_to_draw : list
-		A list containing a description for each objects to draw:
-		For each object to draw, such description is in the format [obj, x, y, dir]:
-			obj (Object): An object to be drawn
-			x, y (int): the x and y coordinates starting from which we draw this object `obj`
-			dir (int): the quadrant in which we will draw the object `obj`
-		To draw the `obj` according to `x`, `y`, `dir`, we first draw a coordinate
-		system at point (`x`, `y`) on `canvas` and draw `obj` on the `dir` 
+	canvases_to_draw : list
+		A list containing a description for each canvas to draw,
+		such description is in the format [c, x, y, dir]:
+			c (numpy.array): A canvas to be drawn
+			x, y (int): the x and y coordinates starting from which we draw this canvas `c`
+			dir (int): the quadrant in which we will draw the canvas `c`, optional and default 0
+		To draw the `c` according to `x`, `y`, `dir`, we first draw a coordinate
+		system at point (`x`, `y`) on `canvas` and draw `c` on the `dir` 
 		quadrant of this coordinate system. 
 	"""
 	canvas = np.array(canvas)
