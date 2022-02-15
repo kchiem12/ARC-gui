@@ -35,17 +35,17 @@ def generate_problem():
 	special_object_index = rand_sample(1, 4)
 	def pick_color(i): return c2 if i == special_object_index else c1
 
-	object_list = [[random_object(o1_xlen, o1_ylen, pick_color(0), 0.8), 0, 0, 0],
-				[random_object(o2_xlen, o1_ylen, pick_color(1), 0.8), o1_xlen+x_sep_len, 0, 0],
-				[random_object(o1_xlen, o2_ylen, pick_color(2), 0.8), 0, o1_ylen+y_sep_len, 0],
-				[random_object(o2_xlen, o2_ylen, pick_color(3), 0.8), o1_xlen+x_sep_len, o1_ylen+y_sep_len, 0]]
+	object_list = [[random_object(o1_xlen, o1_ylen, pick_color(0), 0.8), 0, 0],
+				[random_object(o2_xlen, o1_ylen, pick_color(1), 0.8), o1_xlen+x_sep_len, 0],
+				[random_object(o1_xlen, o2_ylen, pick_color(2), 0.8), 0, o1_ylen+y_sep_len],
+				[random_object(o2_xlen, o2_ylen, pick_color(3), 0.8), o1_xlen+x_sep_len, o1_ylen+y_sep_len]]
 
 
 	input_canvas = paint_objects(input_canvas, object_list)
 	print("----input----")
 	display(input_canvas)
 
-	output_canvas = object_list[special_object_index][0]
+	output_canvas = to_canvas(object_list[special_object_index][0])
 	print("----output----")
 	display(output_canvas)
 

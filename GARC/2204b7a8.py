@@ -73,4 +73,4 @@ def get_output_canvas():
 
 if __name__ == "__main__":
 	generate_problem()
-	print(input_canvas)
+	

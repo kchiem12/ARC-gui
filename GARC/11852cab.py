@@ -60,12 +60,12 @@ def generate_problem():
 	y_len = upper_margin + 5 + lower_margin
 
 	input_canvas = new_canvas(x_len, y_len)
-	input_canvas = paint_objects(input_canvas, [[input_object, left_margin, lower_margin, 0]])
+	input_canvas = paint_canvas(input_canvas, [[input_object, left_margin, lower_margin, 0]])
 	print("----input----")
 	display(input_canvas)
 
 	output_canvas = new_canvas(x_len, y_len)
-	output_canvas = paint_objects(output_canvas, [[output_object, left_margin, lower_margin, 0]])
+	output_canvas = paint_canvas(output_canvas, [[output_object, left_margin, lower_margin, 0]])
 	print("----output----")
 	display(output_canvas)
 
@@ -81,4 +81,4 @@ def get_output_canvas():
 
 if __name__ == "__main__":
 	generate_problem()
-	print(input_canvas)
+	

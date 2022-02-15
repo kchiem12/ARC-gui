@@ -49,7 +49,40 @@ def paint_objects(canvas, objs_to_draw):
 		obj = obj_to_draw[0]
 		x1 = obj_to_draw[1]
 		y1 = obj_to_draw[2]
-		dir = obj_to_draw[3] % 4
+		if len(obj_to_draw) > 3: raise "Not Implemented"
+
+		for j in range(x_length(canvas)):
+			for k in range(y_length(canvas)):
+				color_to_paint = obj.fun(j - x1, k - y1)
+				if color_to_paint != Color.Black: canvas[j][k] = color_to_paint
+	
+	return canvas
+
+def paint_canvas(canvas, canvases_to_draw):
+	"""
+	Returns a new canvas with objects specified by `objs_to_draw` painted on `canvas`
+	Parameters
+	----------
+	canvas : numpy.array
+		Original canvas to draw the objects on
+	objs_to_draw : list
+		A list containing a description for each objects to draw:
+		For each object to draw, such description is in the format [obj, x, y, dir]:
+			obj (Object): An object to be drawn
+			x, y (int): the x and y coordinates starting from which we draw this object `obj`
+			dir (int): the quadrant in which we will draw the object `obj`
+		To draw the `obj` according to `x`, `y`, `dir`, we first draw a coordinate
+		system at point (`x`, `y`) on `canvas` and draw `obj` on the `dir` 
+		quadrant of this coordinate system. 
+	"""
+	canvas = np.array(canvas)
+	for i in range(len(canvases_to_draw)):
+		# print("Drawing the %dth object" %(i))
+		canvas_to_draw = canvases_to_draw[i]
+		obj = canvas_to_draw[0]
+		x1 = canvas_to_draw[1]
+		y1 = canvas_to_draw[2]
+		dir = canvas_to_draw[3] % 4 if len(canvas_to_draw) > 3 else 0
 
 		if not (x_length(obj) == 1 or y_length(obj) == 1):
 			obj = rotate_90(obj, dir)
@@ -84,6 +117,12 @@ def paint_points(canvas, points, color = None):
 	for (i, j) in points:
 		canvas[i][j] = color
 	return canvas
+
+def to_canvas(obj):
+	"""
+	Returns `obj` on a fit canvas
+	"""
+	return obj.arr
 
 def display(canvas):
 	"""

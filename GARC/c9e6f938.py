@@ -34,8 +34,7 @@ def generate_problem():
 	output_canvas = new_canvas(6, 3)
 	rotated_in = flip_x(input_canvas)
 	output_canvas = paint_points(output_canvas, in_position, color)
-	obj_list = [(rotated_in, 3, 0, 0)] #for the parameter of creating the object on canvas
-	output_canvas = paint_objects(output_canvas, obj_list)
+	output_canvas = paint_canvas(output_canvas, [(input_canvas, 0, 0), (rotated_in, 3, 0)])
 	print("----output----")
 	display(output_canvas)
 
@@ -53,4 +52,4 @@ def get_output_canvas():
 
 if __name__ == "__main__":
 	generate_problem()
-	print(input_canvas)
+	

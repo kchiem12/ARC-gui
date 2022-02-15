@@ -21,10 +21,10 @@ def generate_problem():
 	right_points = rand_position(right_object)
 	right_object = paint_points(right_object, right_points, Color.Cobalt)
 
-	input_canvas = paint_objects(input_canvas,
-								[[left_object, 0, 0, 0],
-								[vertical_line(3, Color.Gray), 3, 0, 0],
-								[right_object, 4, 0, 0]])
+	input_canvas = paint_canvas(input_canvas,
+								[[left_object, 0, 0],
+								 [right_object, 4, 0]])
+	input_canvas = paint_objects(input_canvas, [[vertical_ray(Color.Gray), 3, 0]])
 	print("----input----")
 	display(input_canvas)
 
@@ -46,4 +46,4 @@ def get_output_canvas():
 
 if __name__ == "__main__":
 	generate_problem()
-	print(input_canvas)
+	

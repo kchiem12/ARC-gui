@@ -28,35 +28,88 @@ def line(x = 1, y = 1, c = None):
 		return arr
 	else: raise InvalidCommand("Line: can only draw parallel, vertical, or diagonal")
 
-def rectangle(x = 1, y = 1, c = None):
+class Object():
+	def __init__(self):
+		self.fun = None
+		self.arr = None
+
+def object_builder(cond, c):
+	if c == None: c = rand_color()
+	return lambda x, y : c if cond(x, y) else Color.Black
+
+def rectangle(xl = 1, yl = 1, c = None):
 	"""
 	Draws a filled rectangle
 	"""
+	obj = Object()
+	def cond(x,y): return (x >=0 and x < xl and y >=0 and y < yl)
+	obj.fun = object_builder(cond, c)
+	
 	if c == None: c = rand_color()
-	return np.full((x,y), c, dtype=int)
+	obj.arr = np.full((xl,yl), c, dtype=int)
+	return obj
 
 def random_object(x = 1, y = 1, c = None, p = None):
 	"""
 	Draws a random object inside the rectangle `x` times `y`
 	"""
+	obj = Object()
+
 	p = random.random() if p == None else p
+	position_list = []
 	arr = np.zeros((x, y), dtype=int)
 	if c == None: c = rand_color()
 
 	for i in range(x):
 		for j in range(y):
-			if rand_bool(p): arr[i][j] = c
+			if rand_bool(p): 
+				position_list.append((i,j))
+				arr[i][j] = c
 	
-	return arr
+	def cond(x, y): return (x,y) in position_list
+	obj.fun = object_builder(cond, c)
+	obj.arr = arr
+	return obj
+
 
 def vertical_line(l, c = None):
-	return line(1, l, c)
+	obj = Object()
+	def cond(x,y): return (x == 0 and y >=0 and y < l)
+	obj.fun = object_builder(cond, c)
+	obj.arr = line(1, l, c)
+	return obj
 
 def parallel_line(l, c = None):
-	return line(l, 1, c)
+	obj = Object()
+	def cond(x,y): return (y == 0 and x >=0 and x < l)
+	obj.fun = object_builder(cond, c)
+	obj.arr = line(l, 1, c)
+	return obj
 
 def diagonal_line(l, c = None):
-	return line(l, l, c)
+	obj = Object()
+	def cond(x,y): return (x == y and x >=0 and x < l and y >=0 and y < l)
+	obj.fun = object_builder(cond, c)
+	obj.arr = line(l, l, c)
+	return obj
 
 def square(l, c = None):
 	return rectangle(l, l, c)
+
+def vertical_ray(c = None):
+	obj = Object()
+	def cond(x,y): return x == 0
+	obj.fun = object_builder(cond, c)
+	return obj
+
+def parallel_ray(c = None):
+	obj = Object()
+	def cond(x,y): return y == 0
+	obj.fun = object_builder(cond, c)
+	return obj
+
+def diagonal_ray(c = None):
+	obj = Object()
+	def cond(x,y): return x == y
+	obj.fun = object_builder(cond, c)
+	return obj

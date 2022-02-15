@@ -3,6 +3,11 @@ from API.object import *
 from API.color import *
 from API.exception import *
 
+# TODO: This is the only program that uses `dir` argument
+# This is also the program we should change once we have assertion
+# For now, I will just leave it as what it is, 
+# so it is broken and cannot be run at this moment
+
 input_canvas = None
 output_canvas = None
 
