@@ -12,7 +12,7 @@ var EDITION_GRID_WIDTH = 500;
 var MAX_CELL_SIZE = 100;
 
 // Set this value to which input you want to start from
-var index = 14;
+var index = 20;
 
 
 function resetTask() {

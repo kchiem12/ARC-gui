@@ -24,7 +24,7 @@ def generate_problem():
 
 	#generating the input
 	input_canvas = new_canvas(3, 3)
-	in_position = rand_position(input_canvas)
+	in_position = rand_position(3, 3)
 	input_canvas = paint_points(input_canvas, in_position, color)
 	print("----input----")
 	display(input_canvas)

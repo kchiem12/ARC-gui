@@ -11,7 +11,7 @@ def generate_problem():
 
 	global input_canvas, output_canvas
 	input_canvas = new_canvas(3, 3)
-	in_pos = rand_position(input_canvas)
+	in_pos = rand_position(3, 3)
 	color = rand_color()
 	input_canvas = paint_points(input_canvas, in_pos, color)
 	display(input_canvas)

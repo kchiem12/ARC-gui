@@ -65,13 +65,13 @@ Ultimate Goal: ARC is a set to test human's abstraction and reasoning abilities.
 
 Main Idea: we want to **write programs that are as simple as possible**. 
 
-#### Constraints
+#### Constraints 
 
 We should consider adding **constraints** into our programming language. This should simplify problems like [025d127b](./GARC/025d127b.py). The main reason why we had so long a program is that we have to write very carefully to make sure the object we are drawing will not go out of the boundary. So let's just allow drawing outside of the canvas (which is actually default behavior of `paint_objects`) When we want to restrict the function to only draw inside the canvas, we can pass to it an argument `within` specifying such behavior. If `within` is activated and we try to draw outside of the canvas, we can raise the error `ExecutionFailed` so to try to generate another sample, hopefully the new one is valid. 
 
 Kevin's idea is more general than this, he suggests an `assert` function. Some conditions are passed into the `assert` function after each drawing. If the condition is not met, we raise the `ExecutionFailed` error. This is because when we generate the (input, output) pair, we may need the constraint, but the hope is when we train the model to give an output based on input, the program without the `assert` statement is just the solution. 
 
-#### Simpler Functions
+#### Simpler Functions :heavy_check_mark:
 
 e.g. in `05269061`, we are now specifying the length of each diagonal line. However, we want to make each function call and each function itself be as simple as possible. Therefore, in this case, we actually only have to specify the color and say "draw a diagonal line of infinite length." That is also how people view such problems, we don't say "draw a green diagonal line of length 4", but we say "draw a gree diagonal line" as the line in geometric meaning with an infinite length. To achieve this, we can do:
 
@@ -80,3 +80,9 @@ e.g. in `05269061`, we are now specifying the length of each diagonal line. Howe
 - Use the existed functions. Currently, when the length is not specified, we make it random. However, now we make it infinite when not specified, so `parallel_line(l = infinity, color = None)`, `vertical_line(l = infinity, color = None)`, `diagonal_line(l = infinity, color = None)`. This should be good because this random length feature has never been used. 
   
   Problem: When we want to draw for example a green ray, we will have to write `vertical_line(c = Green)`, while previously we don't have to write the `c=` part. Will this confuse the model if we sometimes have `vertical_line(5, Green)`, sometimes have `vertical_line(c = Green)`, and other times have `vertical_line(5)`? A solution is to write `l=` and `c=` all the time, so `vertical_line(l = 5, c = Green)`
+
+Went with the first because it's easier to switch to other options later in this way. 
+
+#### Coordinate System :heavy_check_mark:
+
+The idea of `dir` specifying which quadrant to draw the object isn't too smart. We should just use the old way of `(x,y)` specifying which block to draw. (Before we are treating `(x,y)` as an origin point and use `dir` to specify which quadrant we want to draw in)

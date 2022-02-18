@@ -66,26 +66,44 @@ def rectangle(xl = 1, yl = 1, c = None):
 	obj.arr = np.full((xl,yl), c, dtype=int)
 	return obj
 
-def random_object(x = 1, y = 1, c = None, p = None):
+def random_object(x = 1, y = 1, c = None, p = None, border = False):
 	"""
 	Returns a random object inside the rectangle `x` times `y`
 	"""
 	obj = _Object()
+	MAX_TRY = 20
+	success = False
 
 	p = random.random() if p == None else p
 	position_list = []
-	arr = np.zeros((x, y), dtype=int)
+	array = np.zeros((x, y), dtype=int)
 	if c == None: c = rand_color()
 
-	for i in range(x):
-		for j in range(y):
-			if rand_bool(p): 
-				position_list.append((i,j))
-				arr[i][j] = c
+	def at_border(arr):
+		return sum(arr[0,:]) > 0 and sum(arr[-1,:]) > 0 and \
+			   sum(arr[:,0]) > 0 and sum(arr[:, -1]) > 0
+
+
+	for _ in range(MAX_TRY):
+		for i in range(x):
+			for j in range(y):
+				if rand_bool(p): 
+					position_list.append((i,j))
+					array[i][j] = c
+		if border:
+			if at_border(array): 
+				success = True # not connected
+				break
+			else:
+				p = min(p+0.1, 0.9)
+		position_list = []
+		array = np.zeros((x, y), dtype=int)
+		
+	if not success: raise ExecutionFailed("Cannot generate a full-border object")
 	
 	def cond(x, y): return (x,y) in position_list
 	obj.fun = _fun_builder(cond, c)
-	obj.arr = arr
+	obj.arr = array
 	return obj
 
 
@@ -124,6 +142,12 @@ def square(l, c = None):
 	Returns a square of length `l` and color `c`
 	"""	
 	return rectangle(l, l, c)
+
+def point(c = None):
+	"""
+	Returns a point of color `c`
+	"""	
+	return square(1, c)
 
 def vertical_ray(c = None):
 	"""

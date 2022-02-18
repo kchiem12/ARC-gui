@@ -15,6 +15,7 @@ def generate_problem():
 	x_len = rand_sample(1, closed_interval(8, 12))
 	y_len = rand_sample(1, closed_interval(8, 12))
 
+	# Didn't use rand_position because we had to ensure the uniqueness of each row/column
 	point_number = rand_sample(1, closed_interval(3, 6))
 	xs = rand_sample(point_number, x_len)
 	ys = rand_sample(point_number, y_len)
@@ -22,7 +23,7 @@ def generate_problem():
 	# To be consistent with later drawing output, instead of `paint_points`,
 	# we use `paint_objects` here
 	def gen_input_obj(x, y, c):
-		return (vertical_line(1, c), x, y)
+		return (point(c), x, y)
 
 	input_canvas = new_canvas(x_len, y_len)
 	base_red_point = (gen_input_obj(xs[0], ys[0], Color.Red))

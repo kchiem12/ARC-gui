@@ -14,11 +14,11 @@ def generate_problem():
 	input_canvas = new_canvas(7, 3)
 
 	left_object = new_canvas(3, 3)
-	left_points = rand_position(left_object)
+	left_points = rand_position(3, 3)
 	left_object = paint_points(left_object, left_points, Color.Cobalt)
 
 	right_object = new_canvas(3, 3)
-	right_points = rand_position(right_object)
+	right_points = rand_position(3, 3)
 	right_object = paint_points(right_object, right_points, Color.Cobalt)
 
 	input_canvas = paint_canvas(input_canvas,

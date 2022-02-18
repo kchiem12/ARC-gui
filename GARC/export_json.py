@@ -3,7 +3,7 @@ import os
 import numpy as np
 from API.exception import *
 
-TASK_NAME = "178fcbfb" # The name of the task to generate samples for
+TASK_NAME = "1cf80156" # The name of the task to generate samples for
 GEN_NUM = 10 # Number of input output pair we want to generate
 
 input_canvases = []

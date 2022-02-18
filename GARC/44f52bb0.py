@@ -17,7 +17,7 @@ def generate_problem():
     global input_canvas, output_canvas
 
     input_canvas = new_canvas(3,3)
-    input_canvas = paint_points(input_canvas, rand_position(input_canvas))
+    input_canvas = paint_points(input_canvas, rand_position(3, 3))
 
     flipped_canvas = flip_y(input_canvas)
     rotated_canvas = rotate_90(flipped_canvas, 2)
