@@ -86,3 +86,22 @@ Went with the first because it's easier to switch to other options later in this
 #### Coordinate System :heavy_check_mark:
 
 The idea of `dir` specifying which quadrant to draw the object isn't too smart. We should just use the old way of `(x,y)` specifying which block to draw. (Before we are treating `(x,y)` as an origin point and use `dir` to specify which quadrant we want to draw in)
+
+## Parser - A*
+
+### 2022-02-18
+
+We now shift gears to build a parser, in fact an inverse parser that reads a json input of ARC problem and outputs what commands could be used to generate this problem. We once said that solving ARC is just **find objects -> move the objects**. And this is the "**find object**" part and is also the hardest part of the problem. We hope that the GARC problem we worked on could provide us with some insight. 
+
+In implementation, this "parser" is actually an A\* program, which searches in the program space for the commands that reproduce the problem. To build this A\*, we will need a data structure that holds the commands. A state in A\* is just a list of commands. The distance of a state to final state is the number of different pixels between the canvas our command draws and the original canvas. We also want our result to have as few commands as possible (If you can parse something into a single rectangle, don't parse it into 3 lines)
+
+#### 2022-03-04
+
+The result is very good. Now there are two things to do:
+
+1. Make it run faster by using precomputation and `np.array`: we will precompute two arrays: mask - $B \times H \times W$ and a bitmap $B \times H \times W$. Each entry in these two arrays represent the result of drawing one object: `(line, length, x, y, c)` or `(rec, xlength, ylength, x, y, c)`. $B$ is the branching factor, counting how many possible combinations there are for all kinds of `object_type, length, x, y, c`. We will also have a corresponding list of length $B$, specifying what objects were drawn when we draw some pixels according to bitmap and mask. Therefore, when we run the program, it will now iterate through this list/array of length $B$, because it simply includes all the possible object combination we can have, instead of having 5 or 6 for loops of `for type, for l, for x, for y, for c, ...`
+1. We will now search for a set of possible commands that can give us this result, not a single one. 
+   - Think of our interpreter as encoding ways of reproducing an ARC problem into an FSM. This FSM takes in an action sequence that if executed, will reproduce the input canvas. A state in this FSM used to be an action sequence, but now we want the path to be action sequence and the **state be simply the canvas the path so far taken can draw**. Therefore, if two action sequences draw the same canvas, they are the same state. 
+   - Note there are well possible to have **multiple ways** and therefore multiple paths that lead to the accept state. We want to find all of them. It's impossible to find all, but we can definitely find some by **timing out**: run the program for x seconds and then force it to terminate. 
+   - Eventually we will run A* on multiple inputs and get multiple FSM, intersect all these FSM we get (there is a nice algo allows this) and that will be the interpretation of the whole problem we eventually have. 
+1. It is a good idea to have a random bitmap that takes care of everything left and costs very high so we don't use it often. 
