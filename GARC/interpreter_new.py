@@ -210,13 +210,13 @@ def print_path(target):
 	"""
 	Print in reverse order the first path found from a blank canvas to `target`
 	"""
-	start_hash = hash_canvas(new_canvas(x_length(target), y_length(target)))
+	start = hash_canvas(new_canvas(x_length(target), y_length(target)))
 	current = hash_canvas(target)
 	path = []
-	while current != start_hash:
-		c, pred = nodes[current]
+	while current != start:
+		c, preds = nodes[current]
 		path.append(c)
-		prev = pred[0]
+		prev = preds[0]
 		print(edges[(prev, current)][0])
 		current = prev
 		display(c)
