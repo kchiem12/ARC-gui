@@ -89,7 +89,7 @@ def Astar(canvas):
 								for c in non_black_colors:
 									new_list = s.objs[:-1].copy()
 									next_obj = obj(tp, x, y, c, l = l)
-									test_canvas = paint_objects(s, [next_obj])
+									# test_canvas = paint_objects(s, [next_obj])
 									new_list.append(next_obj)
 									objs_to_draw = list(map(draw_object, list(filter(not_new, new_list))))
 									test_canvas = paint_objects(new_canvas(xlen, ylen), objs_to_draw)

@@ -17,6 +17,7 @@ class Color():
 
 
 non_black_colors = [i+1 for i in range(9)]
+all_colors = [i+1 for i in range(10)]
 
 
 
