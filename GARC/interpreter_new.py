@@ -178,7 +178,7 @@ def Astar(target):
 								# Don't use paint_objects, use native np instead
 								#this_obj = obj(tp, x, y, c, xlen = xl, ylen = yl)
 								#this_canvas = paint_objects(new_canvas(xlen, ylen), 
-								#							[draw_object(this_obj)])
+								#						[draw_object(this_obj)])
 
 								# rectangle will always be inside the boundary since for loop checks for it
 								this_obj = rectangle(xlen, ylen, x, y, xl, yl, c)
