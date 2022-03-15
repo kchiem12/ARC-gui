@@ -12,7 +12,6 @@ from obj_a_new import *
 Does not detect a black object.
 """
 
-
 # parent_dir = os.path.dirname(os.getcwd())
 # arc_data_dir = os.path.join(parent_dir, "ARCdata/data/training/")
 arc_data_dir = os.path.join(os.getcwd(), "ARCdata\\data\\training\\")
@@ -47,6 +46,31 @@ def read_task(taskname, index, inpt = True):
 lines = ["vertical", "parallel", "diagonal"]
 recs = ["rectangle"]
 types = lines + recs
+
+# functions to create the objects
+def rectangle(xlen, ylen, x, y, xl, yl, c):
+	arr = np.zeros((xlen, ylen), dtype=int)
+	shape = np.full((xl,yl), c, dtype=int)
+	arr[x:x+xl, y:y+yl] = shape
+	return arr
+
+def vertical_line(xlen, ylen, x, y, l, c):
+	arr = np.zeros((xlen, ylen), dtype=int)
+	shape = np.full((l,0), c, dtype=int)
+	arr[x:x+l, y:y+1] = shape
+	return arr
+
+def parallel_line(xlen, ylen, x, y, l, c):
+	arr = np.zeros((xlen, ylen), dtype=int)
+	shape = np.full((0, l), c, dtype=int)
+	arr[x:x+1, y:y+l] = shape
+	return arr
+
+def diagonal_line(xlen, ylen, x, y, l, c):
+	arr = np.zeros((xlen, ylen), dtype=int)
+	for i in range(l):
+		arr[x+i][y+i] = c
+	return arr
 
 def draw_object(obj):
 	tp = obj.type
@@ -94,8 +118,10 @@ def Astar(target):
 
 	objs = [] # a list of all possible objects to be drawn
 	commands = [] # a list of the corresponding commands to generate those objects
+	mask_and_objs = [] # a list of all possible objects along with their corresponding masks
 
 
+	#for l in range(1, max(x,y) + 1):
 	# Preprocess possible objects to draw
 	# KEN -- change the code here 
 	for tp in types:
@@ -107,12 +133,41 @@ def Astar(target):
 							# KEN -- change the code here
 							# Don't use paint_objects, use native np instead
 							# You'd also need a different drawing scheme for "vertical", "parallel", "diagonal" lines
+							'''
 							this_obj = obj(tp, x, y, c, l = l)
 							this_canvas = paint_objects(new_canvas(xlen, ylen), 
 														[draw_object(this_obj)])
+							'''
+							mask = np.zeros((x, y), dtype=bool)
+							
+							#split this into three cases
+							if tp == "vertical":
+								height = l - ((l+x)-xlen) if l+x > (xlen) else l  #to not go out of boundary
+								this_obj = vertical_line(xlen, ylen, x, y, height, c)
+								#mask[x:x+height, y:y+1] = this_obj   #increasing the x-coordinate because of np coordinate system
+								mask = this_obj==c
+								this_canvas = this_obj if mask else this_canvas
+								mask_and_objs.append((this_obj, mask))
+							elif tp == "parallel":
+								length = l - ((l+y)-ylen) if l+y > (ylen) else l
+								this_obj = parallel_line(xlen, ylen, x, y, length, c)
+								#mask[x:x+1, y:y+length] = this_obj
+								mask = this_obj==c
+								this_canvas = this_obj if mask else this_canvas
+								mask_and_objs.append((this_obj, mask))
+							else:
+								#for diagonal line
+								length = 0
+								if x==max(x,y): #checks in which direction is closer to the boundary
+									length = l - ((l+x)-xlen) if l+x > (xlen) else l
+								else:
+									length = l - ((l+y)-ylen) if l+y > (ylen) else l
+								this_obj = diagonal_line(xlen, ylen, x, y, length, c)
+								mask = this_obj==c
+								this_canvas = this_obj if mask else this_canvas
+								mask_and_objs.append((this_obj, mask))
 							objs.append(this_canvas)
 							commands.append(this_obj)
-
 		elif tp in recs:
 			for x in range(xlen):
 				for y in range(ylen):
@@ -121,9 +176,17 @@ def Astar(target):
 							for c in non_black_colors:
 								# KEN -- change the code here
 								# Don't use paint_objects, use native np instead
-								this_obj = obj(tp, x, y, c, xlen = xl, ylen = yl)
-								this_canvas = paint_objects(new_canvas(xlen, ylen), 
-															[draw_object(this_obj)])
+								#this_obj = obj(tp, x, y, c, xlen = xl, ylen = yl)
+								#this_canvas = paint_objects(new_canvas(xlen, ylen), 
+								#							[draw_object(this_obj)])
+
+								# rectangle will always be inside the boundary since for loop checks for it
+								this_obj = rectangle(xlen, ylen, x, y, xl, yl, c)
+								# mask[x:x+xl, y:y+yl] = this_obj
+								mask = this_obj==c
+								this_canvas = this_obj if mask else this_canvas
+								mask_and_objs.append((this_obj, mask))
+
 								objs.append(this_canvas)
 								commands.append(this_obj)
 	obj_num = len(objs)
@@ -158,7 +221,8 @@ def Astar(target):
 		for i in range(obj_num):
 			next_canvas = this_state.canvas.copy()
 			# KEN -- change this code to np
-			next_canvas = paint_canvas(next_canvas, [[objs[i], 0, 0, 0]])
+			#next_canvas = paint_canvas(next_canvas, [[objs[i], 0, 0, 0]])
+			next_canvas = mask_and_objs[i][0] if mask_and_objs[i][1] else next_canvas
 			next_hash = hash_canvas(next_canvas)
 			if next_hash not in nodes: 
 				nodes[next_hash] = [next_canvas, [this_hash]]
