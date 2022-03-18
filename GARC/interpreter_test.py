@@ -1,4 +1,4 @@
-from interpreter import *
+from interpreter_another import *
 import matplotlib.pyplot as plt
 import random
 import numpy as np
@@ -52,6 +52,13 @@ def objnum_scalibility_test():
 	plt.plot(range(1, l+1), result)
 	plt.savefig('objectsavg_div2.png')
 
+def speed_test():
+	canvas = np.array(read_task("1190e5a7", 1, True))
+	canvas = array_to_canvas(canvas)
+	result = [Astar(canvas) for _ in range(TRY_TIMES)]
+	result = np.mean(result, axis=0)
+	print(result)
 
 # dimension_scalibility_test()
-objnum_scalibility_test()
+# objnum_scalibility_test()
+speed_test()

@@ -167,7 +167,6 @@ def Astar(target):
 								masks.append(this_mask)
 								objs.append(this_obj)
 								commands.append(this_command)
-	obj_num = len(objs)
 
 
 	start_time = time.time()
@@ -201,9 +200,9 @@ def Astar(target):
 			print(this_state.cost, prev_command_cost, diff_to_target(this_canvas))
 
 		# Search Regular Objects
-		for i in range(obj_num):
-			next_canvas = this_state.canvas.copy()
-			next_canvas = np.where(masks[i], objs[i], next_canvas)
+		next_canvases = np.where(masks, objs, this_canvas)
+		for i in range(len(next_canvases)):
+			next_canvas = next_canvases[i]
 			# TODO: only considers the commands that improve the cost
 			if diff_to_target(next_canvas) >= this_state.cost: continue
 
@@ -274,7 +273,7 @@ def print_path(target):
 		c, preds = nodes[current]
 		path.append(c)
 		prev = preds[0]
-		print(edges[(prev, current)][0])
+		print(list(edges[(prev, current)]))
 		current = prev
 		display(c)
 		
@@ -295,9 +294,9 @@ if __name__ == "__main__":
 	# canvas = np.array([[0,1,1],[0,1,1],[1,0,0]])
 
 	# 切方块
-	# canvas = np.array(read_task("1190e5a7", 1, True))
+	canvas = np.array(read_task("1190e5a7", 1, True))
 	# 画斜线
-	canvas = np.array(read_task("05269061", 1, True))
+	# canvas = np.array(read_task("05269061", 1, True))
 	# Rand Object
 	# canvas = np.array(read_task("0520fde7", 2, True))
 
