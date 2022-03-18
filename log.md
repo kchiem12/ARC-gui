@@ -95,7 +95,7 @@ We now shift gears to build a parser, in fact an inverse parser that reads a jso
 
 In implementation, this "parser" is actually an A\* program, which searches in the program space for the commands that reproduce the problem. To build this A\*, we will need a data structure that holds the commands. A state in A\* is just a list of commands. The distance of a state to final state is the number of different pixels between the canvas our command draws and the original canvas. We also want our result to have as few commands as possible (If you can parse something into a single rectangle, don't parse it into 3 lines)
 
-#### 2022-03-04
+### 2022-03-04
 
 The result is very good. Now there are two things to do:
 

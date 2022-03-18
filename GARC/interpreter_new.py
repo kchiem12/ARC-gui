@@ -49,28 +49,39 @@ types = lines + recs
 
 # functions to create the objects
 def rectangle(xlen, ylen, x, y, xl, yl, c):
-	arr = np.zeros((xlen, ylen), dtype=int)
-	shape = np.full((xl,yl), c, dtype=int)
-	arr[x:x+xl, y:y+yl] = shape
-	return arr
+	obj_canvas = np.zeros((xlen, ylen), dtype = int)
+	mask_canvas = np.array(obj_canvas, dtype = bool)
+	obj = np.full((xl,yl), c, dtype=int)
+	mask = np.array(obj, dtype = bool)
+	obj_canvas[x:x+xl, y:y+yl] = obj
+	mask_canvas[x:x+xl, y:y+yl] = mask
+	return obj_canvas, mask_canvas
 
 def vertical_line(xlen, ylen, x, y, l, c):
-	arr = np.zeros((xlen, ylen), dtype=int)
-	shape = np.full((l,0), c, dtype=int)
-	arr[x:x+l, y:y+1] = shape
-	return arr
+	obj_canvas = np.zeros((xlen, ylen), dtype = int)
+	mask_canvas = np.array(obj_canvas, dtype = bool)
+	obj = np.full((1,l), c, dtype = int)
+	mask = np.array(obj, dtype = bool)
+	obj_canvas[x:x+1, y:y+l] = obj
+	mask_canvas[x:x+1, y:y+l] = mask
+	return obj_canvas, mask_canvas
 
 def parallel_line(xlen, ylen, x, y, l, c):
-	arr = np.zeros((xlen, ylen), dtype=int)
-	shape = np.full((0, l), c, dtype=int)
-	arr[x:x+1, y:y+l] = shape
-	return arr
+	obj_canvas = np.zeros((xlen, ylen), dtype = int)
+	mask_canvas = np.array(obj_canvas, dtype = bool)
+	obj = np.full((l,1), c, dtype = int)
+	mask = np.array(obj, dtype = bool)
+	obj_canvas[x:x+l, y:y+1] = obj
+	mask_canvas[x:x+l, y:y+1] = mask
+	return obj_canvas, mask_canvas
 
 def diagonal_line(xlen, ylen, x, y, l, c):
-	arr = np.zeros((xlen, ylen), dtype=int)
+	obj_canvas = np.zeros((xlen, ylen), dtype = int)
+	mask_canvas = np.array(obj_canvas, dtype = bool)
 	for i in range(l):
-		arr[x+i][y+i] = c
-	return arr
+		obj_canvas[x+i][y+i] = c
+		mask_canvas[x+i][y+i] = True
+	return obj_canvas, mask_canvas
 
 def draw_object(obj):
 	tp = obj.type
@@ -109,86 +120,53 @@ def Astar(target):
 	maxlen = max(xlen, ylen)
 	area = xlen * ylen
 
-	new_object_cost = area # user-defined new object cost
-	cheating_cost = 10 * area # user-defined all cover cost
+	new_object_cost = 0 # user-defined new object cost
+	cheating_cost = area # user-defined all cover cost
+	def diff_to_target(canvas): return sum(sum(canvas != target))
 
-	start = state(new_canvas(xlen, ylen))
-	nodes[hash(start)] = [start.canvas, []]
-	q.put(start)
+	start_canvas = new_canvas(xlen, ylen)
+	start_cost = diff_to_target(start_canvas)
+	start_state = state(start_canvas, start_cost)
+	nodes[hash(start_state)] = [start_state.canvas, []]
+	q.put(start_state)
 
 	objs = [] # a list of all possible objects to be drawn
 	commands = [] # a list of the corresponding commands to generate those objects
-	mask_and_objs = [] # a list of all possible objects along with their corresponding masks
+	masks = []
 
 
-	#for l in range(1, max(x,y) + 1):
 	# Preprocess possible objects to draw
-	# KEN -- change the code here 
 	for tp in types:
 		if tp in lines:
 			for l in range(1, maxlen+1):
 				for x in range(xlen):
 					for y in range(ylen):
-						for c in non_black_colors:
-							# KEN -- change the code here
-							# Don't use paint_objects, use native np instead
-							# You'd also need a different drawing scheme for "vertical", "parallel", "diagonal" lines
-							'''
-							this_obj = obj(tp, x, y, c, l = l)
-							this_canvas = paint_objects(new_canvas(xlen, ylen), 
-														[draw_object(this_obj)])
-							'''
-							mask = np.zeros((x, y), dtype=bool)
-							
-							#split this into three cases
+						for c in all_colors:
+							this_command = obj(tp, x, y, c, l = l)
 							if tp == "vertical":
-								height = l - ((l+x)-xlen) if l+x > (xlen) else l  #to not go out of boundary
-								this_obj = vertical_line(xlen, ylen, x, y, height, c)
-								#mask[x:x+height, y:y+1] = this_obj   #increasing the x-coordinate because of np coordinate system
-								mask = this_obj==c
-								this_canvas = this_obj if mask else this_canvas
-								mask_and_objs.append((this_obj, mask))
+								if l > ylen - y: continue
+								this_obj, this_mask = vertical_line(xlen, ylen, x, y, l, c)
 							elif tp == "parallel":
-								length = l - ((l+y)-ylen) if l+y > (ylen) else l
-								this_obj = parallel_line(xlen, ylen, x, y, length, c)
-								#mask[x:x+1, y:y+length] = this_obj
-								mask = this_obj==c
-								this_canvas = this_obj if mask else this_canvas
-								mask_and_objs.append((this_obj, mask))
-							else:
-								#for diagonal line
-								length = 0
-								if x==max(x,y): #checks in which direction is closer to the boundary
-									length = l - ((l+x)-xlen) if l+x > (xlen) else l
-								else:
-									length = l - ((l+y)-ylen) if l+y > (ylen) else l
-								this_obj = diagonal_line(xlen, ylen, x, y, length, c)
-								mask = this_obj==c
-								this_canvas = this_obj if mask else this_canvas
-								mask_and_objs.append((this_obj, mask))
-							objs.append(this_canvas)
-							commands.append(this_obj)
+								if l > xlen - x: continue
+								this_obj, this_mask = parallel_line(xlen, ylen, x, y, l, c)
+							elif tp == "diagonal":
+								if l > xlen - x or l > ylen - y: continue
+								this_obj, this_mask = diagonal_line(xlen, ylen, x, y, l, c)
+							masks.append(this_mask)
+							objs.append(this_obj)
+							commands.append(this_command)
 		elif tp in recs:
 			for x in range(xlen):
 				for y in range(ylen):
-					for xl in range(2, xlen - x + 1):
-						for yl in range(2, ylen - y + 1):
-							for c in non_black_colors:
-								# KEN -- change the code here
-								# Don't use paint_objects, use native np instead
-								#this_obj = obj(tp, x, y, c, xlen = xl, ylen = yl)
-								#this_canvas = paint_objects(new_canvas(xlen, ylen), 
-								#						[draw_object(this_obj)])
-
+					for xl in range(1, xlen - x + 1):
+						for yl in range(1, ylen - y + 1):
+							for c in all_colors:
 								# rectangle will always be inside the boundary since for loop checks for it
-								this_obj = rectangle(xlen, ylen, x, y, xl, yl, c)
-								# mask[x:x+xl, y:y+yl] = this_obj
-								mask = this_obj==c
-								this_canvas = this_obj if mask else this_canvas
-								mask_and_objs.append((this_obj, mask))
-
-								objs.append(this_canvas)
-								commands.append(this_obj)
+								this_command = obj(tp, x, y, c, xlen = xl, ylen = yl)
+								this_obj, this_mask = rectangle(xlen, ylen, x, y, xl, yl, c)
+								masks.append(this_mask)
+								objs.append(this_obj)
+								commands.append(this_command)
 	obj_num = len(objs)
 
 
@@ -206,30 +184,39 @@ def Astar(target):
 		this_state = q.get()
 		this_hash = hash(this_state)
 
-		# print("iterating new state")
+		# print("iterating new state with cost " + str(this_state.cost))
 		# display(this_state.canvas)
 		
 		if this_hash in vis:
 			continue
 		vis.add(this_hash)
 		this_canvas = nodes[this_hash][0]
+		prev_command_cost = this_state.cost - diff_to_target(this_canvas)
 
 		# if previous_state != None:
 		# 	print(edges[(hash(previous_state), this_hash)])
 
+		if this_hash == inter_hash:
+			print("FOUND IMPORTANT INTER STATE")
+			print(this_state.cost, prev_command_cost, diff_to_target(this_canvas))
+
 		# Search Regular Objects
 		for i in range(obj_num):
 			next_canvas = this_state.canvas.copy()
-			# KEN -- change this code to np
-			#next_canvas = paint_canvas(next_canvas, [[objs[i], 0, 0, 0]])
-			next_canvas = mask_and_objs[i][0] if mask_and_objs[i][1] else next_canvas
+			next_canvas = np.where(masks[i], objs[i], next_canvas)
+			# TODO: only considers the commands that improve the cost
+			if diff_to_target(next_canvas) >= this_state.cost: continue
+
 			next_hash = hash_canvas(next_canvas)
 			if next_hash not in nodes: 
 				nodes[next_hash] = [next_canvas, [this_hash]]
 			else:
 				nodes[next_hash][1].append(this_hash)
 			
-			next_cost = sum(sum(next_canvas != canvas)) + new_object_cost
+			# if next_hash == inter_hash:
+			# 	print("MIGHT BE BECAUSE OF HERE??")
+
+			next_cost = prev_command_cost + diff_to_target(next_canvas) + new_object_cost
 			next_state = state(next_canvas, next_cost)
 			
 			if (this_hash, next_hash) not in edges:
@@ -239,36 +226,42 @@ def Astar(target):
 
 			if next_cost == new_object_cost: 
 				print("FOUND")
-				return
-
+				return time.time() - start_time
 
 			if hash(next_state) not in vis: q.put(next_state)
 
 		# Search Cheating yet Expensive Shortcuts
-		# diff_canvas = np.where(this_canvas != canvas, canvas, Color.Black)
-		# for c in non_black_colors:
-		# 	next_canvas_to_paint = np.where(diff_canvas == c, diff_canvas, Color.Black)
-		# 	next_canvas = paint_canvas(this_canvas.copy(), [[next_canvas_to_paint, 0, 0, 0]])
-		# 	next_hash = hash_canvas(next_canvas)
-		# 	if next_hash not in nodes: 
-		# 		nodes[next_hash] = [next_canvas, [this_hash]]
-		# 	else:
-		# 		nodes[next_hash][1].append(this_hash)
+		diff_canvas = np.where(this_canvas != target, target, Color.Black)
+		for c in non_black_colors:
+			next_canvas_to_paint = np.where(diff_canvas == c, diff_canvas, Color.Black)
+			next_canvas = paint_canvas(this_canvas.copy(), [[next_canvas_to_paint, 0, 0, 0]])
 			
-		# 	next_cost = sum(sum(next_canvas != canvas)) + cheating_cost
-		# 	next_state = state(next_canvas, next_cost)
+			# TODO: only considers the commands that improve the cost
+			if diff_to_target(next_canvas) >= this_state.cost: continue
 
-		# 	if (this_hash, next_hash) not in edges:
-		# 		edges[(this_hash, next_hash)] = [(obj(tp="cheat", color=c), next_cost)]
-		# 	else:
-		# 		edges[(this_hash, next_hash)].append((obj(tp="cheat", color=c), next_cost))
+			next_hash = hash_canvas(next_canvas)
+			if next_hash not in nodes: 
+				nodes[next_hash] = [next_canvas, [this_hash]]
+			else:
+				nodes[next_hash][1].append(this_hash)
+			
+			next_cost = prev_command_cost + diff_to_target(next_canvas) + cheating_cost
+			next_state = state(next_canvas, next_cost)
 
-		# 	# edges[(this_hash, next_hash)] = (obj(tp="cheat", color=c), next_cost)
-		# 	if next_cost == cheating_cost: 
-		# 		print("FOUND")
-		# 		return
+			# if next_hash == inter_hash:
+			# 	print("FOUND IMPORTANT INTER STATE iN NEXT")
+			# 	print(next_cost, prev_command_cost, diff_to_target(next_canvas), cheating_cost)
 
-		# 	if hash(next_state) not in vis: q.put(next_state)
+			if (this_hash, next_hash) not in edges:
+				edges[(this_hash, next_hash)] = [(obj(tp="cheat", color=c), next_cost)]
+			else:
+				edges[(this_hash, next_hash)].append((obj(tp="cheat", color=c), next_cost))
+
+			if next_cost == cheating_cost: 
+				print("FOUND")
+				return time.time() - start_time
+
+			if hash(next_state) not in vis: q.put(next_state)
 
 def print_path(target):
 	"""
@@ -287,9 +280,9 @@ def print_path(target):
 		
 	return path
 	
-inter_state = np.array([[0,0,0,5,0,0,0],
-						[0,0,0,5,0,0,0],
-						[0,0,0,5,0,0,0]])
+inter_state = np.array([[0,0,1,5,0,0,0],
+						[1,1,1,5,1,0,1],
+						[1,1,1,5,1,0,1]])
 inter_state = array_to_canvas(inter_state)
 inter_hash = hash_canvas(inter_state)
 
@@ -297,9 +290,9 @@ if __name__ == "__main__":
 	# test for parallel and vertical line
 	canvas = np.array(([5,5,5], [0,0,3], [0,0,3]))
 	# test for diagonal line
-	canvas = np.array([[0,0,1],[0,1,0],[1,0,0]])
+	# canvas = np.array([[0,0,1],[0,1,0],[1,0,0]])
 	# test for square
-	canvas = np.array([[0,1,1],[0,1,1],[1,0,0]])
+	# canvas = np.array([[0,1,1],[0,1,1],[1,0,0]])
 
 	# 切方块
 	# canvas = np.array(read_task("1190e5a7", 1, True))
@@ -308,11 +301,8 @@ if __name__ == "__main__":
 	# Rand Object
 	# canvas = np.array(read_task("0520fde7", 2, True))
 
-	# canvas = np.random.rand(5, 5)
-	# canvas = np.where(canvas > 0.5, 1, 2)
-
 	canvas = array_to_canvas(canvas)
 	display(canvas)
-	Astar(canvas)
+	print(Astar(canvas))
 	print_path(canvas)
 	
