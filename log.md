@@ -105,3 +105,28 @@ The result is very good. Now there are two things to do:
    - Note there are well possible to have **multiple ways** and therefore multiple paths that lead to the accept state. We want to find all of them. It's impossible to find all, but we can definitely find some by **timing out**: run the program for x seconds and then force it to terminate. 
    - Eventually we will run A* on multiple inputs and get multiple FSM, intersect all these FSM we get (there is a nice algo allows this) and that will be the interpretation of the whole problem we eventually have. 
 1. It is a good idea to have a random bitmap that takes care of everything left and costs very high so we don't use it often. 
+
+### 2022-03-18 & 03-23
+
+Recall the A* priority formula $f(n)=g(n)+h(n)$, we have two things to direct our search: 
+
+- $g(n)$ - cost so far: the cost of a program is the length of its encoding information: how much bit of information is contained in this function. Use the canvas below as an example: N means nothing is there (blank/black), RGB are different colors. 
+
+  ```
+  target:   current:
+  N N B      N N N
+  R N N      R N N
+  N N G      N N N 
+  ```
+
+  - A line has five arguments: start x y, end x y, color, so we write $cost(l) = 2\log HW+\log C$
+
+    H, W is the number of rows/columns that can be chosen as a starting/end point of the line. Note in this example, the column 1, 2 cannot be chosen as an endpoint of the line, because there's nothing needed to be drawn there. For the same reason, row 2 is not an option for endpoint. Therefore, H = 2, W = 1, C = 9
+
+  - A bitmap also has five arguments, but this time we also count the "randomness" of this bitmap. Say we have a bitmap of $h\times w$, $cost(bitmap) = h\times w \times H[C]$. $H[C]$ is the entropy of this bitmap.  $H[C] = -p\log p-(1-p)\log (1-p)$, where p = #points of color c /  area of this bitmap ($h \times w$) The idea here is the the more uniform, the smaller area a bitmap is, the lower it costs. 
+
+- $h(n)$ - heuristic of where the goal is: instead of pixel-wise difference we used before, we now use an information theory way to calculate this: something like $\text{\#diff} \times \log HWC$ should work. In this particular example, we will have $2 \times (\log 9 + \log 2)$. There are 9 possible positions and 2 colors missing. $H$ and $W$ here should be the pixels we got wrong. 
+
+A good way to test heuristic is to count the number of iterations it took for an A* to find the solution and also consider the cost at the same time (if we just use bitmap, it will be very quick but expensive)
+
+关于HWC怎么算，我也不清楚。There is much conflicting information above, refer to [Information Theory, Inference, and Learning Algorithms](http://www.inference.org.uk/mackay/itila/book.html) to build your own heuristics. 

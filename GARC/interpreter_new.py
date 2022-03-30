@@ -120,7 +120,7 @@ def Astar(target):
 	maxlen = max(xlen, ylen)
 	area = xlen * ylen
 
-	new_object_cost = 0 # user-defined new object cost
+	new_object_cost = 1 # user-defined new object cost
 	cheating_cost = area # user-defined all cover cost
 	def diff_to_target(canvas): return sum(sum(canvas != target))
 
@@ -223,7 +223,7 @@ def Astar(target):
 			else:
 				edges[(this_hash, next_hash)].append((commands[i], next_cost))
 
-			if next_cost == new_object_cost: 
+			if next_cost == prev_command_cost + new_object_cost: 
 				print("FOUND")
 				return time.time() - start_time
 
@@ -256,7 +256,7 @@ def Astar(target):
 			else:
 				edges[(this_hash, next_hash)].append((obj(tp="cheat", color=c), next_cost))
 
-			if next_cost == cheating_cost: 
+			if next_cost == prev_command_cost + cheating_cost: 
 				print("FOUND")
 				return time.time() - start_time
 
@@ -294,9 +294,9 @@ if __name__ == "__main__":
 	# canvas = np.array([[0,1,1],[0,1,1],[1,0,0]])
 
 	# 切方块
-	canvas = np.array(read_task("1190e5a7", 1, True))
+	# canvas = np.array(read_task("1190e5a7", 1, True))
 	# 画斜线
-	# canvas = np.array(read_task("05269061", 1, True))
+	canvas = np.array(read_task("05269061", 1, False))
 	# Rand Object
 	# canvas = np.array(read_task("0520fde7", 2, True))
 
