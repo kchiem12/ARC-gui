@@ -1,8 +1,10 @@
 class state():
-	def __init__(self, canvas = [], cost = 0, command_cost = 0):
+	def __init__(self, canvas = [], cost = 0, command_cost = 0, parent = None, edge = None):
 		self.canvas = canvas
 		self.cost = cost
 		self.command_cost = command_cost
+		self.parent = parent
+		self.edge = edge
 	
 	def __hash__(self):
 		return hash(tuple(map(tuple, self.canvas)))
@@ -44,7 +46,7 @@ class obj():
 		if self.type == "diagonal": return "diagonal line of length " + str(self.len) + general
 		if self.type == "rectangle": return "rectangle of xlength " + str(self.xlen) + " ylength " + str(self.ylen) + general
 		if self.type == "new": return "a new object"
-		if self.type == "cheat": return "cheated with color " + str(self.color)
+		if self.type == "cheat": return "bitmap of xlength " + str(self.xlen) + " ylength " + str(self.ylen) + general
 
 	def __repr__(self):
 		return self.__str__()

@@ -6,29 +6,27 @@ from API.canvas import *
 from API.object import *
 from API.color import *
 from API.util import *
-from obj_a_new import *
-
-"""
-Does not detect a black object.
-"""
+from obj_a_log import *
 
 # parent_dir = os.path.dirname(os.getcwd())
 # arc_data_dir = os.path.join(parent_dir, "ARCdata/data/training/")
 arc_data_dir = os.path.join(os.getcwd(), "ARCdata\\data\\training\\")
 RUNTIME = 600.0
+WANTED_RESULTS_NUM = 5
+PRINT_FREQUENCY = 100
 # RUNTIME = 5.0
 
 def array_to_canvas(arr):
 	"""
 	Convert np array `arr` into our API coordinate system
 	"""
-	return np.rot90(arr, 3).tolist()
+	return np.rot90(arr, 3)
 
 def canvas_to_array(cnv):
 	"""
 	Convert `cnv` of our API coordinate system into the np array coordinate system
 	"""
-	return np.rot90(cnv).tolist()
+	return np.rot90(cnv)
 
 def read_task(taskname, index, inpt = True):
 	"""
@@ -98,6 +96,18 @@ def not_new(obj): return obj.type != "new"
 def hash_canvas(canvas):
 	return hash(tuple(map(tuple, canvas)))
 
+def entropy(canvas, colors = all_colors):
+	etpy = 0
+	area = x_length(canvas) * y_length(canvas)
+	for c in colors:
+		n = sum(sum(canvas == c))
+		if n == 0: continue
+		p = n / area
+		etpy -= p * np.log(p)
+	return etpy
+
+
+
 # node: hash_canvas -> [canvas, preds]
 # where `canvas` is the np representation of the state/canvas we are in 
 # `preds` is a list of hash of the predecessors of this canvas
@@ -121,22 +131,33 @@ def Astar(target):
 	maxlen = max(xlen, ylen)
 	area = xlen * ylen
 
+	line_cost = np.log(area * max(xlen, ylen) * 10)
+	rec_cost = 2 * np.log(area) + np.log(10)
+	baseline_cost = rec_cost
 	new_object_cost = 1 # user-defined new object cost
 	cheating_cost = area # user-defined all cover cost
-	def diff_to_target(canvas): return sum(sum(canvas != target))
 
-	start_canvas = new_canvas(xlen, ylen)
-	start_cost = diff_to_target(start_canvas)
-	start_state = state(start_canvas, start_cost)
+	final_states = []
+	
+	def diff_to_target(canvas): return sum(sum(canvas != target))
+	def heuristic_distance(canvas):
+		diff_num = diff_to_target(canvas)
+		if diff_num == 0: return 0
+		diff_canvas = target[canvas != target]
+		diff_color_kind = len(set(diff_canvas.flatten()))
+		return np.log(area * diff_color_kind * diff_num) # now
+		# return diff_num * np.log(area * diff_color_kind) # kevin
+
+	blank_canvas = new_canvas(xlen, ylen)
+	start_state = state(blank_canvas)
 	nodes[hash(start_state)] = [start_state.canvas, []]
 	q.put(start_state)
 
-	objs = [] # a list of all possible objects to be drawn
-	commands = [] # a list of the corresponding commands to generate those objects
-	masks = []
-
-
 	# Preprocess possible objects to draw
+	objs = [] # a list of all possible objects to be drawn
+	obj_commands = [] # a list of the corresponding commands to generate those objects
+	obj_masks = []
+
 	for tp in types:
 		if tp in lines:
 			for l in range(1, maxlen+1):
@@ -153,9 +174,9 @@ def Astar(target):
 							elif tp == "diagonal":
 								if l > xlen - x or l > ylen - y: continue
 								this_obj, this_mask = diagonal_line(xlen, ylen, x, y, l, c)
-							masks.append(this_mask)
+							obj_masks.append(this_mask)
 							objs.append(this_obj)
-							commands.append(this_command)
+							obj_commands.append(this_command)
 		elif tp in recs:
 			for x in range(xlen):
 				for y in range(ylen):
@@ -165,12 +186,48 @@ def Astar(target):
 								# rectangle will always be inside the boundary since for loop checks for it
 								this_command = obj(tp, x, y, c, xlen = xl, ylen = yl)
 								this_obj, this_mask = rectangle(xlen, ylen, x, y, xl, yl, c)
-								masks.append(this_mask)
+								obj_masks.append(this_mask)
 								objs.append(this_obj)
-								commands.append(this_command)
+								obj_commands.append(this_command)
+
+
+
+	""" Preprocess possible bitmaps to draw	"""
+	bitmaps = []
+	bitmap_commands = []
+	bitmap_masks = []
+	bitmap_costs = []
+
+	for c in all_colors:
+
+		bitmap_mask = np.where(target == np.array(c), True, False)
+		if sum(sum(bitmap_mask)) == 0: continue # if there is nothing to draw for this color on the whole canvas, we just skip this color
+		bitmap = np.where(target == np.array(c), c, Color.Black)
+		
+		for x in range(xlen):
+			for y in range(ylen):
+				for xl in range(1, xlen - x + 1):
+					for yl in range(1, ylen - y + 1):
+						# this_bitmap = np.zeros((xlen, ylen), dtype = int)
+						this_bitmap_mask = np.full((xlen, ylen), False)
+						this_command = obj("cheat", x, y, c, xlen = xl, ylen = yl)
+						
+						this_bitmap_mask[x:x+xl, y:y+yl] = bitmap_mask[x:x+xl, y:y+yl]
+						if sum(sum(this_bitmap_mask)) == 0: continue # if there is nothing to draw for this color in this region, we just skip this region
+						this_command_cost = xl * yl * entropy(bitmap[x:x+xl, y:y+yl])
+						# if(c==1 and x==0 and y==0 and xl==7 and yl==3):
+						# 	print("!!!")
+						# 	print(entropy(bitmap[x:x+xl, y:y+yl]))
+						# 	print(this_command_cost)
+						
+						bitmaps.append(bitmap)
+						bitmap_masks.append(this_bitmap_mask)
+						bitmap_commands.append(this_command)
+						bitmap_costs.append(this_command_cost)
 
 
 	start_time = time.time()
+	counter = 0 
 	# previous_state = None
 	# global this_state
 	# this_state = None
@@ -184,86 +241,97 @@ def Astar(target):
 		this_state = q.get()
 		this_hash = hash(this_state)
 
-		# print("iterating new state with cost " + str(this_state.cost))
-		# display(this_state.canvas)
+		counter += 1
+		if counter == PRINT_FREQUENCY:
+			print("iterating new state with cost %f, heuristic distance %f" %(this_state.command_cost, this_state.cost - this_state.command_cost))
+			display(this_state.canvas)
+			counter = 0
 		
 		if this_hash in vis:
 			continue
 		vis.add(this_hash)
 		this_canvas = nodes[this_hash][0]
-		prev_command_cost = this_state.cost - diff_to_target(this_canvas)
+		this_command_cost = this_state.command_cost
 
 		# if previous_state != None:
 		# 	print(edges[(hash(previous_state), this_hash)])
 
 		if this_hash == inter_hash:
 			print("FOUND IMPORTANT INTER STATE")
-			print(this_state.cost, prev_command_cost, diff_to_target(this_canvas))
+			print(this_state.cost, this_command_cost, diff_to_target(this_canvas))
 
 		# Search Regular Objects
-		next_canvases = np.where(masks, objs, this_canvas)
+		next_canvases = np.where(obj_masks, objs, this_canvas)
 		for i in range(len(next_canvases)):
 			next_canvas = next_canvases[i]
-			# TODO: only considers the commands that improve the cost
-			if diff_to_target(next_canvas) >= this_state.cost: continue
 
+			next_command = obj_commands[i]
 			next_hash = hash_canvas(next_canvas)
 			if next_hash not in nodes: 
-				nodes[next_hash] = [next_canvas, [this_hash]]
+				nodes[next_hash] = [next_canvas, [this_canvas]]
 			else:
-				nodes[next_hash][1].append(this_hash)
+				nodes[next_hash][1].append(this_canvas)
 			
 			# if next_hash == inter_hash:
 			# 	print("MIGHT BE BECAUSE OF HERE??")
 
-			next_cost = prev_command_cost + diff_to_target(next_canvas) + new_object_cost
-			next_state = state(next_canvas, next_cost)
+			hrstc_dis = heuristic_distance(next_canvas)
+			next_command_cost = this_command_cost + \
+								(rec_cost if next_command.type == "rectangle" else line_cost)
+			next_cost = next_command_cost + hrstc_dis
+			next_state = state(next_canvas, next_cost, next_command_cost, this_state, next_command)
 			
 			if (this_hash, next_hash) not in edges:
-				edges[(this_hash, next_hash)] = [(commands[i], next_cost)]
+				edges[(this_hash, next_hash)] = [(next_command, next_cost, hrstc_dis)]
 			else:
-				edges[(this_hash, next_hash)].append((commands[i], next_cost))
+				edges[(this_hash, next_hash)].append((next_command, next_cost, hrstc_dis))
 
-			if diff_to_target(next_canvas) == 0: 
+			# if hrstc_dis == 0: 
+			# 	print("FOUND")
+			# 	return time.time() - start_time, next_state
+			if hrstc_dis == 0: 
+				final_states.append(next_state)
 				print("FOUND")
-				return time.time() - start_time
+				if len(final_states) == WANTED_RESULTS_NUM: return final_states
 
 			if hash(next_state) not in vis: q.put(next_state)
 
 		# Search Cheating yet Expensive Shortcuts
-		diff_canvas = np.where(this_canvas != target, target, Color.Black)
-		for c in non_black_colors:
-			next_canvas_to_paint = np.where(diff_canvas == c, diff_canvas, Color.Black)
-			next_canvas = paint_canvas(this_canvas.copy(), [[next_canvas_to_paint, 0, 0, 0]])
-			
-			# TODO: only considers the commands that improve the cost
-			if diff_to_target(next_canvas) >= this_state.cost: continue
+		next_canvases = np.where(bitmap_masks, bitmaps, this_canvas)
+		for i in range(len(next_canvases)):
+			next_canvas = next_canvases[i]
 
+			next_command = bitmap_commands[i]
 			next_hash = hash_canvas(next_canvas)
 			if next_hash not in nodes: 
-				nodes[next_hash] = [next_canvas, [this_hash]]
+				nodes[next_hash] = [next_canvas, [this_canvas]]
 			else:
-				nodes[next_hash][1].append(this_hash)
+				nodes[next_hash][1].append(this_canvas)
 			
-			next_cost = prev_command_cost + diff_to_target(next_canvas) + cheating_cost
-			next_state = state(next_canvas, next_cost)
-
 			# if next_hash == inter_hash:
-			# 	print("FOUND IMPORTANT INTER STATE iN NEXT")
-			# 	print(next_cost, prev_command_cost, diff_to_target(next_canvas), cheating_cost)
-
+			# 	print("MIGHT BE BECAUSE OF HERE??")
+			
+			hrstc_dis = heuristic_distance(next_canvas)
+			next_command_cost = this_command_cost + bitmap_costs[i] + baseline_cost			
+			next_cost = next_command_cost + hrstc_dis
+			next_state = state(next_canvas, next_cost, next_command_cost, this_state, next_command)
+			
 			if (this_hash, next_hash) not in edges:
-				edges[(this_hash, next_hash)] = [(obj(tp="cheat", color=c), next_cost)]
+				edges[(this_hash, next_hash)] = [(next_command, next_cost, hrstc_dis)]
 			else:
-				edges[(this_hash, next_hash)].append((obj(tp="cheat", color=c), next_cost))
+				edges[(this_hash, next_hash)].append((next_command, next_cost, hrstc_dis))
 
-			if diff_to_target(next_canvas) == 0: 
+			# if hrstc_dis == 0: 
+			# 	print("FOUND")
+			# 	return time.time() - start_time, next_state
+			if hrstc_dis == 0: 
+				final_states.append(next_state)
 				print("FOUND")
-				return time.time() - start_time
+				if len(final_states) == WANTED_RESULTS_NUM: return final_states
 
 			if hash(next_state) not in vis: q.put(next_state)
 
-def print_path(target):
+def print_path_canvas_hash(target):
 	"""
 	Print in reverse order the first path found from a blank canvas to `target`
 	"""
@@ -279,7 +347,24 @@ def print_path(target):
 		display(c)
 		
 	return path
+
+def print_path_state(final_state):
+	xlen = x_length(final_state.canvas)
+	ylen = y_length(final_state.canvas)
+	blank_canvas = new_canvas(xlen, ylen)
+	current = final_state
+	path = []
+	while hash_canvas(current.canvas) != hash_canvas(blank_canvas):
+		display(current.canvas)
+		print(current.edge)
+		current = current.parent
+	display(blank_canvas)
+	return path
 	
+def sorted_states_by_command_cost(states):
+	for state in states: assert(state.command_cost == state.cost)
+	return sorted(states, key = lambda x : x.cost)
+
 inter_state = np.array([[0,0,1,5,0,0,0],
 						[1,1,1,5,1,0,1],
 						[1,1,1,5,1,0,1]])
@@ -288,7 +373,7 @@ inter_hash = hash_canvas(inter_state)
 
 if __name__ == "__main__":
 	# test for parallel and vertical line
-	canvas = np.array(([5,5,5], [0,0,3], [0,0,3]))
+	# canvas = np.array(([5,5,5], [0,0,3], [0,0,3]))
 	# test for diagonal line
 	# canvas = np.array([[0,0,1],[0,1,0],[1,0,0]])
 	# test for square
@@ -297,12 +382,22 @@ if __name__ == "__main__":
 	# 切方块
 	# canvas = np.array(read_task("1190e5a7", 1, True))
 	# 画斜线
-	canvas = np.array(read_task("05269061", 1, False))
+	# canvas = np.array(read_task("05269061", 1, True))
 	# Rand Object
-	# canvas = np.array(read_task("0520fde7", 2, True))
+	canvas = np.array(read_task("0520fde7", 0, True))
 
 	canvas = array_to_canvas(canvas)
 	display(canvas)
-	print(Astar(canvas))
-	print_path(canvas)
+	# time_used, final_state = Astar(canvas)
+	# print(time_used)
+	# print_path_state(final_state)
+
+	res = Astar(canvas)
+	# nodes = dict(map(lambda k: {k : [nodes[k][0], set(nodes[k][1])]}, nodes))
+	ress = sorted_states_by_command_cost(res)
+	for i in range(len(ress)):
+		print("---------%d---------" %(i))
+		print_path_state(ress[i])
+		print("---------%d---------" %(i))
+	x = 1
 	

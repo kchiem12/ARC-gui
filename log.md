@@ -121,7 +121,7 @@ Recall the A* priority formula $f(n)=g(n)+h(n)$, we have two things to direct ou
 
   - A line has five arguments: start x y, end x y, color, so we write $cost(l) = 2\log HW+\log C$
 
-    H, W is the number of rows/columns that can be chosen as a starting/end point of the line. Note in this example, the column 1, 2 cannot be chosen as an endpoint of the line, because there's nothing needed to be drawn there. For the same reason, row 2 is not an option for endpoint. Therefore, H = 2, W = 1, C = 9
+    H, W is the height/width of the canvas. $C$ is default 10. 
 
   - A bitmap also has five arguments, but this time we also count the "randomness" of this bitmap. Say we have a bitmap of $h\times w$, $cost(bitmap) = h\times w \times H[C]$. $H[C]$ is the entropy of this bitmap.  $H[C] = -p\log p-(1-p)\log (1-p)$, where p = #points of color c /  area of this bitmap ($h \times w$) The idea here is the the more uniform, the smaller area a bitmap is, the lower it costs. 
 
@@ -130,3 +130,12 @@ Recall the A* priority formula $f(n)=g(n)+h(n)$, we have two things to direct ou
 A good way to test heuristic is to count the number of iterations it took for an A* to find the solution and also consider the cost at the same time (if we just use bitmap, it will be very quick but expensive)
 
 关于HWC怎么算，我也不清楚。There is much conflicting information above, refer to [Information Theory, Inference, and Learning Algorithms](http://www.inference.org.uk/mackay/itila/book.html) to build your own heuristics. 
+
+### 2022-04-01
+
+There are two important functions in A*:
+
+- heuristic: just direct the search. It no longer matters as soon as the search finishes 
+- cost: this is the important part. We want it to align perfectly with the solution form we want
+
+It is possible that sometimes the heuristics direct to the suboptimal solution, but we are good as long as the final path cost is consistent with what we need. In practice, we first obtain the best 100 solutions based on heuristics and sort them according to final cost. As long as the solution we want has the lowest final cost, we are good. 
