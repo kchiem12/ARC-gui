@@ -247,7 +247,7 @@ def Astar(target):
 			print("iterating new state with cost %f, heuristic distance %f" %(this_state.command_cost, this_state.cost - this_state.command_cost))
 			display(this_state.canvas)
 			counter = 0
-		
+				
 		if this_hash in vis:
 			continue
 		vis.add(this_hash)
@@ -394,6 +394,10 @@ if __name__ == "__main__":
 	# print_path_state(final_state)
 
 	res = Astar(canvas)
+	for i in range(len(res)):
+		print("---------%d---------" %(i))
+		print_path_state(res[i])
+		print("---------%d---------" %(i))
 	# nodes = dict(map(lambda k: {k : [nodes[k][0], set(nodes[k][1])]}, nodes))
 	for i in range(len(res)):
 		print("---------%d---------" %(i))
