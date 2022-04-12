@@ -9,10 +9,11 @@ from API.util import *
 from obj_a_log import *
 
 # parent_dir = os.path.dirname(os.getcwd())
-# arc_data_dir = os.path.join(parent_dir, "ARCdata/data/training/")
-arc_data_dir = os.path.join(os.getcwd(), "ARCdata\\data\\training\\")
+# arc_data_dir = os.path.join(os.getcwd(), "ARCdata/data/training/")
+# arc_data_dir = os.path.join(os.getcwd(), "ARCdata\\data\\training\\")
+arc_data_dir = "/home/ly373/ARC/ARCdata/data/training/"
 RUNTIME = 600.0
-WANTED_RESULTS_NUM = 5
+WANTED_RESULTS_NUM = 200
 PRINT_FREQUENCY = 100
 # RUNTIME = 5.0
 
@@ -234,9 +235,9 @@ def Astar(target):
 
 	while not q.empty():#  and time.time() - start_time < RUNTIME:
 		
-		if time.time() - start_time > RUNTIME:
-			print("OUT OF TIME, TERMINATE")
-			return
+		# if time.time() - start_time > RUNTIME:
+		# 	print("OUT OF TIME, TERMINATE")
+		# 	return
 		# previous_state = this_state
 		this_state = q.get()
 		this_hash = hash(this_state)
@@ -394,6 +395,11 @@ if __name__ == "__main__":
 
 	res = Astar(canvas)
 	# nodes = dict(map(lambda k: {k : [nodes[k][0], set(nodes[k][1])]}, nodes))
+	for i in range(len(res)):
+		print("---------%d---------" %(i))
+		print_path_state(res[i])
+		print("---------%d---------" %(i))
+
 	ress = sorted_states_by_command_cost(res)
 	for i in range(len(ress)):
 		print("---------%d---------" %(i))
