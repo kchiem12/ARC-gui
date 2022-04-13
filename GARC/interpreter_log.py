@@ -1,6 +1,5 @@
 import json
 import queue
-import os
 import time
 from API.canvas import *
 from API.object import *
@@ -13,7 +12,7 @@ from obj_a_log import *
 # arc_data_dir = os.path.join(os.getcwd(), "ARCdata\\data\\training\\")
 arc_data_dir = "/home/ly373/ARC/ARCdata/data/training/"
 RUNTIME = 600.0
-WANTED_RESULTS_NUM = 200
+WANTED_RESULTS_NUM = 120
 PRINT_FREQUENCY = 100
 # RUNTIME = 5.0
 
@@ -246,6 +245,7 @@ def Astar(target):
 		if counter == PRINT_FREQUENCY:
 			print("iterating new state with cost %f, heuristic distance %f" %(this_state.command_cost, this_state.cost - this_state.command_cost))
 			display(this_state.canvas)
+			print_path_state(this_state, True)
 			counter = 0
 				
 		if this_hash in vis:
@@ -265,6 +265,9 @@ def Astar(target):
 		next_canvases = np.where(obj_masks, objs, this_canvas)
 		for i in range(len(next_canvases)):
 			next_canvas = next_canvases[i]
+
+			# TODO: only considers the commands that improve the cost
+			if diff_to_target(next_canvas) >= diff_to_target(this_canvas): continue
 
 			next_command = obj_commands[i]
 			next_hash = hash_canvas(next_canvas)
@@ -301,6 +304,9 @@ def Astar(target):
 		next_canvases = np.where(bitmap_masks, bitmaps, this_canvas)
 		for i in range(len(next_canvases)):
 			next_canvas = next_canvases[i]
+
+			# TODO: only considers the commands that improve the cost
+			if diff_to_target(next_canvas) >= diff_to_target(this_canvas): continue
 
 			next_command = bitmap_commands[i]
 			next_hash = hash_canvas(next_canvas)
@@ -349,14 +355,14 @@ def print_path_canvas_hash(target):
 		
 	return path
 
-def print_path_state(final_state):
+def print_path_state(final_state, edge_only=False):
 	xlen = x_length(final_state.canvas)
 	ylen = y_length(final_state.canvas)
 	blank_canvas = new_canvas(xlen, ylen)
 	current = final_state
 	path = []
 	while hash_canvas(current.canvas) != hash_canvas(blank_canvas):
-		display(current.canvas)
+		if not edge_only: display(current.canvas)
 		print(current.edge)
 		current = current.parent
 	display(blank_canvas)
@@ -394,11 +400,6 @@ if __name__ == "__main__":
 	# print_path_state(final_state)
 
 	res = Astar(canvas)
-	for i in range(len(res)):
-		print("---------%d---------" %(i))
-		print_path_state(res[i])
-		print("---------%d---------" %(i))
-	# nodes = dict(map(lambda k: {k : [nodes[k][0], set(nodes[k][1])]}, nodes))
 	for i in range(len(res)):
 		print("---------%d---------" %(i))
 		print_path_state(res[i])
