@@ -1,6 +1,7 @@
 import json
 import queue
 import time
+import os
 from API.canvas import *
 from API.object import *
 from API.color import *
@@ -117,6 +118,8 @@ nodes = {}
 # `commands` contains a list of commands that can transform canvas u into v
 edges = {}
 
+total_iterations = 0
+
 def Astar(target):
 	# q may store states with the same canvas but of different cost
 	# vis only records whether a state with that canvas is visited or not, 
@@ -131,8 +134,13 @@ def Astar(target):
 	maxlen = max(xlen, ylen)
 	area = xlen * ylen
 
-	line_cost = np.log(area * max(xlen, ylen) * 10)
-	rec_cost = 2 * np.log(area) + np.log(10)
+	target_colors = list(filter(
+		lambda c : sum(sum(np.where(target == np.array(c), True, False))) != 0, 
+		all_colors))
+	target_colors_num = len(target_colors)
+
+	line_cost = np.log(area * max(xlen, ylen) * target_colors_num)
+	rec_cost = 2 * np.log(area) + np.log(target_colors_num)
 	baseline_cost = rec_cost
 	new_object_cost = 1 # user-defined new object cost
 	cheating_cost = area # user-defined all cover cost
@@ -163,7 +171,7 @@ def Astar(target):
 			for l in range(1, maxlen+1):
 				for x in range(xlen):
 					for y in range(ylen):
-						for c in all_colors:
+						for c in target_colors:
 							this_command = obj(tp, x, y, c, l = l)
 							if tp == "vertical":
 								if l > ylen - y: continue
@@ -182,7 +190,7 @@ def Astar(target):
 				for y in range(ylen):
 					for xl in range(1, xlen - x + 1):
 						for yl in range(1, ylen - y + 1):
-							for c in all_colors:
+							for c in target_colors:
 								# rectangle will always be inside the boundary since for loop checks for it
 								this_command = obj(tp, x, y, c, xlen = xl, ylen = yl)
 								this_obj, this_mask = rectangle(xlen, ylen, x, y, xl, yl, c)
@@ -198,10 +206,9 @@ def Astar(target):
 	bitmap_masks = []
 	bitmap_costs = []
 
-	for c in all_colors:
+	for c in target_colors:
 
 		bitmap_mask = np.where(target == np.array(c), True, False)
-		if sum(sum(bitmap_mask)) == 0: continue # if there is nothing to draw for this color on the whole canvas, we just skip this color
 		bitmap = np.where(target == np.array(c), c, Color.Black)
 		
 		for x in range(xlen):
@@ -241,6 +248,7 @@ def Astar(target):
 		this_state = q.get()
 		this_hash = hash(this_state)
 
+		total_iterations += 1
 		counter += 1
 		if counter == PRINT_FREQUENCY:
 			print("iterating new state with cost %f, heuristic distance %f" %(this_state.command_cost, this_state.cost - this_state.command_cost))
@@ -400,6 +408,9 @@ if __name__ == "__main__":
 	# print_path_state(final_state)
 
 	res = Astar(canvas)
+
+	print("Used a total %d iterations" %(total_iterations))
+
 	for i in range(len(res)):
 		print("---------%d---------" %(i))
 		print_path_state(res[i])
