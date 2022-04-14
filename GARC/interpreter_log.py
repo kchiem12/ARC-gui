@@ -1,6 +1,7 @@
 import json
 import queue
 import time
+import cProfile
 from API.canvas import *
 from API.object import *
 from API.color import *
@@ -12,7 +13,7 @@ from obj_a_log import *
 # arc_data_dir = os.path.join(os.getcwd(), "ARCdata\\data\\training\\")
 arc_data_dir = "/home/ly373/ARC/ARCdata/data/training/"
 RUNTIME = 600.0
-WANTED_RESULTS_NUM = 120
+WANTED_RESULTS_NUM = 5
 PRINT_FREQUENCY = 100
 # RUNTIME = 5.0
 
@@ -133,7 +134,7 @@ def Astar(target):
 
 	line_cost = np.log(area * max(xlen, ylen) * 10)
 	rec_cost = 2 * np.log(area) + np.log(10)
-	baseline_cost = rec_cost
+	baseline_cost = line_cost
 	new_object_cost = 1 # user-defined new object cost
 	cheating_cost = area # user-defined all cover cost
 
@@ -363,9 +364,9 @@ def print_path_state(final_state, edge_only=False):
 	path = []
 	while hash_canvas(current.canvas) != hash_canvas(blank_canvas):
 		if not edge_only: display(current.canvas)
-		print(current.edge)
+		print(current.edge, current.command_cost)
 		current = current.parent
-	display(blank_canvas)
+	if not edge_only: display(blank_canvas)
 	return path
 	
 def sorted_states_by_command_cost(states):
@@ -379,6 +380,10 @@ inter_state = array_to_canvas(inter_state)
 inter_hash = hash_canvas(inter_state)
 
 if __name__ == "__main__":
+
+	profiler = cProfile.Profile()
+	profiler.enable()
+
 	# test for parallel and vertical line
 	# canvas = np.array(([5,5,5], [0,0,3], [0,0,3]))
 	# test for diagonal line
@@ -389,9 +394,9 @@ if __name__ == "__main__":
 	# 切方块
 	# canvas = np.array(read_task("1190e5a7", 1, True))
 	# 画斜线
-	# canvas = np.array(read_task("05269061", 1, True))
+	canvas = np.array(read_task("05269061", 1, True))
 	# Rand Object
-	canvas = np.array(read_task("0520fde7", 0, True))
+	# canvas = np.array(read_task("0520fde7", 0, True))
 
 	canvas = array_to_canvas(canvas)
 	display(canvas)
@@ -400,6 +405,10 @@ if __name__ == "__main__":
 	# print_path_state(final_state)
 
 	res = Astar(canvas)
+
+	profiler.disable()
+	profiler.dump_stats("/home/ly373/ARC/GARC/search.stats")
+	
 	for i in range(len(res)):
 		print("---------%d---------" %(i))
 		print_path_state(res[i])

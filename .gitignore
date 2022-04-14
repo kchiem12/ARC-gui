@@ -12,3 +12,6 @@ GARC/samples/
 .idea/
 questions.md
 GARC/notes.md
+*.err
+*.out
+GARC/search.stats
