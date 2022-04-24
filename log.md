@@ -139,3 +139,52 @@ There are two important functions in A*:
 - cost: this is the important part. We want it to align perfectly with the solution form we want
 
 It is possible that sometimes the heuristics direct to the suboptimal solution, but we are good as long as the final path cost is consistent with what we need. In practice, we first obtain the best 100 solutions based on heuristics and sort them according to final cost. As long as the solution we want has the lowest final cost, we are good. 
+
+### 2022-04-15
+
+#### Beta
+
+Let $\theta$  be the bias of the coin, $F=1$ be the event of head. 
+
+In a normal Bernoulli Distribution, knowing $\theta$, we have $P(F = 1 | \theta) = \theta, P(F = 0 | \theta) = 1 - \theta$.
+
+Now let $f$ to denote the result of the trial ($f=1$ if it's head, $f=0$ if it's tail). We can get a generalized probability $P(f|\theta) = \theta^f(1-\theta)^{1-f}$. So if $f=1$, it is $\theta$. If $f=0$, it is $1-\theta$. 
+
+#### Dirichlet
+
+Dirichlet Distribution is a distribution of multinomial probability variables. It can be used as a prior so that when we infer the posterior based on observed data (multinomial distribution), we still get a multinomial distribution. 
+
+$c$: colors, a 10-state categorical variable
+
+$\theta$: a probability distribution of colors, $\theta \in \mathbb R^{10}, \sum \theta_i=1, \theta_i \ge 0$. It defines the probability of a pixel being of color $c$: $P(c|\theta) = \theta_c$
+
+Let's say $\theta \sim Dirichlet(\alpha)$, We use this as a prior. Ignoring all the normalizing factors, the **prior** is
+$$
+P(\theta | \alpha) \propto \prod_i \theta^{a_i - 1}
+$$
+**Likelihood** of our observed data is 
+$$
+P(c|\theta) \propto \prod_i \theta_i^{c_i}
+$$
+From prior and likelihood we can get **posterior**
+$$
+P(\theta | c\alpha) \propto P(c|\theta) P(\theta | \alpha) = \prod_i \theta^{a_i + c_i - 1}
+$$
+Note we are familiar with posterior formula be $P(\theta|c) \propto P(c|\theta) P(\theta)$. Now we just replace $\theta$ with $\theta|\alpha$. Now we can see, this posterior has the exact same form as the multinomial/Dirichlet distribution. 
+
+Back to our problem, look at the closed form of the Dirichlet distribution, 
+$$
+{\displaystyle {\frac {\Gamma \left(\sum \alpha _{k}\right)\Gamma \left(n+1\right)}{\Gamma \left(n+\sum \alpha _{k}\right)}}\prod _{k=1}^{K}{\frac {\Gamma (x_{k}+\alpha _{k})}{\Gamma (\alpha _{k})\Gamma \left(x_{k}+1\right)}}}
+$$
+
+> $x$ is a vector of colors counts in current canvas. $x_i$ is the number of times color $i$ appeared. $\alpha$ is a vector that you can play with, but it should be all constant. $K=10$, number of distinct colors  $n=(height \times width)$  $ x_k$=count of number of grid cells that are color k. You take the negative log of the above equation to get a cost. 
+
+We are basically **defining distribution over objects and the cost is negative log probability**. 
+
+Our job is to find what $\alpha$ gives us 2 small bitmaps is better than 1 big bitmap (0520fde7). To play with $\alpha$, $\sum \alpha_k$ controls the strength of the distribution (how peaked it is), and the $\alpha_k$ control where the peak occurs. See *Kevin P. Murphy - Machine Learning A Probabilistic Perspective 2.5.4* 
+
+#### Other Things to Do
+
+- add a dot primitive
+- visualization
+- argument parsing for filename, alpha

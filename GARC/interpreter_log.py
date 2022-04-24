@@ -10,13 +10,13 @@ from API.util import *
 from obj_a_log import *
 from scipy.special import loggamma
 
-# parent_dir = os.path.dirname(os.getcwd())
-# arc_data_dir = os.path.join(os.getcwd(), "ARCdata/data/training/")
-# arc_data_dir = os.path.join(os.getcwd(), "ARCdata\\data\\training\\")
-arc_data_dir = "/home/ly373/ARC/ARCdata/data/training/"
 RUNTIME = 600.0
-WANTED_RESULTS_NUM = 100
+WANTED_RESULTS_NUM = 20
 PRINT_FREQUENCY = 100
+SERVER = False
+# parent_dir = os.path.dirname(os.getcwd())
+arc_data_dir = "/home/ly373/ARC/ARCdata/data/training/" if SERVER \
+			   else os.path.join(os.getcwd(), "ARCdata\\data\\training\\")
 # RUNTIME = 5.0
 
 def array_to_canvas(arr):
@@ -115,7 +115,7 @@ def dirchilet_multinom_cost(counts, alpha = 1):
 	K = len(counts)
 	res = loggamma(K * alpha) + loggamma(n+1) - loggamma(n + K*alpha)
 	for k in range(K):
-		res = loggamma(counts[k]+alpha) - loggamma(alpha) - loggamma(counts[k]+1)
+		res += loggamma(counts[k]+alpha) - loggamma(alpha) - loggamma(counts[k]+1)
 	return -res
 
 
@@ -234,12 +234,8 @@ def Astar(target):
 						# this_command_cost = pow(xl*yl, 2.5) / area \
 						# 					* (1 - sum(sum(this_bitmap_mask)) / (xl*yl))
 										#   * entropy(bitmap[x:x+xl, y:y+yl])
-						temp = sum(sum(this_bitmap_mask))
-						this_command_cost = dirchilet_multinom_cost([temp, xl*yl - temp], 0.01) + np.log(9)
-						# if(c==1 and x==0 and y==0 and xl==7 and yl==3):
-						# 	print("!!!")
-						# 	print(entropy(bitmap[x:x+xl, y:y+yl]))
-						# 	print(this_command_cost)
+						colored_bits = sum(sum(this_bitmap_mask))
+						this_command_cost = dirchilet_multinom_cost([colored_bits, xl*yl - colored_bits], 0.01) + np.log(10)
 						
 						bitmaps.append(bitmap)
 						bitmap_masks.append(this_bitmap_mask)
@@ -430,8 +426,9 @@ if __name__ == "__main__":
 
 	res = Astar(canvas)
 
-	profiler.disable()
-	profiler.dump_stats("/home/ly373/ARC/GARC/search.stats")
+	if SERVER:
+		profiler.disable()
+		profiler.dump_stats("/home/ly373/ARC/GARC/search.stats")
 	
 	print("Used a total %d iterations" %(total_iterations))
 
