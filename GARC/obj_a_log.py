@@ -41,6 +41,7 @@ class obj():
 
 	def __str__(self):
 		general = str.format(" at ({0}, {1}) of color {2}", self.xs, self.ys, self.color)
+		if self.type == "dot": return "dot" + general
 		if self.type == "vertical": return "vertical line of length " + str(self.len) + general
 		if self.type == "parallel": return "parallel line of length " + str(self.len) + general
 		if self.type == "diagonal": return "diagonal line of length " + str(self.len) + general

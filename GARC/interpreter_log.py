@@ -12,7 +12,7 @@ from obj_a_log import *
 from scipy.special import loggamma
 
 RUNTIME = 600.0
-WANTED_RESULTS_NUM = 100
+WANTED_RESULTS_NUM = 10
 PRINT_FREQUENCY = 100
 SERVER = True
 # parent_dir = os.path.dirname(os.getcwd())
@@ -53,11 +53,19 @@ def read_task(taskname, index, inpt = True):
 	return data["input"] if inpt else data["output"]
 
 
+dots = ["dot"]
 lines = ["vertical", "parallel", "diagonal"]
 recs = ["rectangle"]
-types = lines + recs
+types = dots + lines + recs
 
 # functions to create the objects
+def dot(xlen, ylen, x, y, c):
+	obj_canvas = np.zeros((xlen, ylen), dtype = int)
+	mask_canvas = np.array(obj_canvas, dtype = bool)
+	obj_canvas[x, y] = c
+	mask_canvas[x, y] = False
+	return obj_canvas, mask_canvas
+
 def rectangle(xlen, ylen, x, y, xl, yl, c):
 	obj_canvas = np.zeros((xlen, ylen), dtype = int)
 	mask_canvas = np.array(obj_canvas, dtype = bool)
@@ -155,9 +163,11 @@ def Astar(target):
 
 	target_colors = list(filter(
 		lambda c : sum(sum(np.where(target == np.array(c), True, False))) != 0, 
-		all_colors))
+		non_black_colors))
+	target_colors += [Color.Black] # always include black
 	target_colors_num = len(target_colors)
 
+	dot_cost = np.log(area) + np.log(target_colors_num)
 	line_cost = np.log(area * max(xlen, ylen) * target_colors_num)
 	rec_cost = 2 * np.log(area) + np.log(target_colors_num)
 	baseline_cost = line_cost
@@ -186,6 +196,15 @@ def Astar(target):
 	obj_masks = []
 
 	for tp in types:
+		if tp in dots:
+			for x in range(xlen):
+				for y in range(ylen):
+					for c in target_colors:
+						this_command = obj(tp, x, y, c)
+						this_obj, this_mask = dot(xlen, ylen, x, y, c)
+						obj_masks.append(this_mask)
+						objs.append(this_obj)
+						obj_commands.append(this_command)
 		if tp in lines:
 			for l in range(1, maxlen+1):
 				for x in range(xlen):
@@ -309,7 +328,8 @@ def Astar(target):
 
 			hrstc_dis = heuristic_distance(next_canvas)
 			next_command_cost = this_command_cost + \
-								(rec_cost if next_command.type == "rectangle" else line_cost)
+								(rec_cost if next_command.type == "rectangle" else \
+								 dot_cost if next_command.type == "dot" else line_cost)
 			next_cost = next_command_cost + hrstc_dis
 			next_state = state(next_canvas, next_cost, next_command_cost, this_state, next_command)
 			
@@ -416,12 +436,12 @@ if __name__ == "__main__":
 	# test for diagonal line
 	# canvas = np.array([[0,0,1],[0,1,0],[1,0,0]])
 	# test for square
-	# canvas = np.array([[0,1,1],[0,1,1],[1,0,0]])
+	canvas = np.array([[0,1,1],[0,1,1],[1,0,0]])
 
 	# 切方块
 	# canvas = np.array(read_task("1190e5a7", 0, True))
 	# 画斜线
-	canvas = np.array(read_task("05269061", 1, False))
+	# canvas = np.array(read_task("05269061", 1, False))
 	# Rand Object
 	# canvas = np.array(read_task("0520fde7", 2, True))
 
