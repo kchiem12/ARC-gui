@@ -1,3 +1,4 @@
+import argparse
 import json
 import queue
 import time
@@ -11,13 +12,21 @@ from obj_a_log import *
 from scipy.special import loggamma
 
 RUNTIME = 600.0
-WANTED_RESULTS_NUM = 20
+WANTED_RESULTS_NUM = 100
 PRINT_FREQUENCY = 100
-SERVER = False
+SERVER = True
 # parent_dir = os.path.dirname(os.getcwd())
 arc_data_dir = "/home/ly373/ARC/ARCdata/data/training/" if SERVER \
 			   else os.path.join(os.getcwd(), "ARCdata\\data\\training\\")
 # RUNTIME = 5.0
+
+parser = argparse.ArgumentParser()
+# data I/O
+parser.add_argument('-a', '--alpha', type = float,
+					default = 1, help='alpha value in Dirichlet Distribution')
+
+args = parser.parse_args()
+print(args.alpha)
 
 def array_to_canvas(arr):
 	"""
@@ -151,7 +160,7 @@ def Astar(target):
 
 	line_cost = np.log(area * max(xlen, ylen) * target_colors_num)
 	rec_cost = 2 * np.log(area) + np.log(target_colors_num)
-	baseline_cost = 0
+	baseline_cost = line_cost
 	new_object_cost = 1 # user-defined new object cost
 	cheating_cost = area # user-defined all cover cost
 
@@ -235,7 +244,7 @@ def Astar(target):
 						# 					* (1 - sum(sum(this_bitmap_mask)) / (xl*yl))
 										#   * entropy(bitmap[x:x+xl, y:y+yl])
 						colored_bits = sum(sum(this_bitmap_mask))
-						this_command_cost = dirchilet_multinom_cost([colored_bits, xl*yl - colored_bits], 0.01) + np.log(10)
+						this_command_cost = dirchilet_multinom_cost([colored_bits, xl*yl - colored_bits], args.alpha) + np.log(10)
 						
 						bitmaps.append(bitmap)
 						bitmap_masks.append(this_bitmap_mask)
@@ -314,7 +323,7 @@ def Astar(target):
 			# 	return time.time() - start_time, next_state
 			if hrstc_dis == 0: 
 				final_states.append(next_state)
-				print("FOUND")
+				# print("FOUND")
 				if len(final_states) == WANTED_RESULTS_NUM: return final_states
 
 			if hash(next_state) not in vis: q.put(next_state)
@@ -352,7 +361,7 @@ def Astar(target):
 			# 	return time.time() - start_time, next_state
 			if hrstc_dis == 0: 
 				final_states.append(next_state)
-				print("FOUND")
+				# print("FOUND")
 				if len(final_states) == WANTED_RESULTS_NUM: return final_states
 
 			if hash(next_state) not in vis: q.put(next_state)
@@ -412,9 +421,9 @@ if __name__ == "__main__":
 	# 切方块
 	# canvas = np.array(read_task("1190e5a7", 0, True))
 	# 画斜线
-	# canvas = np.array(read_task("05269061", 1, False))
+	canvas = np.array(read_task("05269061", 1, False))
 	# Rand Object
-	canvas = np.array(read_task("0520fde7", 2, True))
+	# canvas = np.array(read_task("0520fde7", 2, True))
 
 	# canvas = np.array(read_task("06df4c85", 2, True))
 
@@ -430,6 +439,7 @@ if __name__ == "__main__":
 		profiler.disable()
 		profiler.dump_stats("/home/ly373/ARC/GARC/search.stats")
 	
+	print("This is with alpha being %f" %(args.alpha))
 	print("Used a total %d iterations" %(total_iterations))
 
 	# for i in range(len(res)):

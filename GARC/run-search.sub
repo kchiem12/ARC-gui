@@ -10,4 +10,4 @@
 #SBATCH --mem=64000                           # server memory requested (per node)
 #SBATCH -t 2:00:00                           # Time limit (hh:mm:ss)
 #SBATCH --partition=ellis       # Request partition
-python3 /home/ly373/ARC/GARC/interpreter_log.py
+python3 /home/ly373/ARC/GARC/interpreter_log.py -a $1

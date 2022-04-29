@@ -172,7 +172,7 @@ P(\theta | c\alpha) \propto P(c|\theta) P(\theta | \alpha) = \prod_i \theta^{a_i
 $$
 Note we are familiar with posterior formula be $P(\theta|c) \propto P(c|\theta) P(\theta)$. Now we just replace $\theta$ with $\theta|\alpha$. Now we can see, this posterior has the exact same form as the multinomial/Dirichlet distribution. 
 
-Back to our problem, look at the closed form of the Dirichlet distribution, 
+Back to our problem, look at the closed form of the Dirichlet distribution, (We use this form in our program)
 $$
 {\displaystyle {\frac {\Gamma \left(\sum \alpha _{k}\right)\Gamma \left(n+1\right)}{\Gamma \left(n+\sum \alpha _{k}\right)}}\prod _{k=1}^{K}{\frac {\Gamma (x_{k}+\alpha _{k})}{\Gamma (\alpha _{k})\Gamma \left(x_{k}+1\right)}}}
 $$
