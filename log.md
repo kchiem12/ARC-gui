@@ -188,3 +188,36 @@ Our job is to find what $\alpha$ gives us 2 small bitmaps is better than 1 big b
 - add a dot primitive
 - visualization
 - argument parsing for filename, alpha
+
+## 2022-04-29
+
+### Logic of Cost
+
+Today we talked more about the logic of how we defined our search cost. Basically, we are **defining a distribution of the programs and the cost is negative log of the probability of such a program is sampled**. 
+$$
+\begin{align}
+\text{cost(prog)} 
+&= -\log \mathbb P[\text{prog}] \\
+\sum_{\text{command $\in$ prog}} \text{cost(command)} 
+&= -\log \prod_{\text{command $\in$ prog}} \mathbb p[\text{command}]\\
+&= \sum_{\text{command $\in$ prog}} -\log \mathbb p[\text{command}]
+\end{align}
+$$
+Next we go to define the probability of sampling a specific command, where $\theta$ is the probability that this kind of command is chosen. We need to make sure $\theta_{line} + \theta_{rec} + \theta_{bitmap} = 1$ to make it a probability distribution. 
+
+- $\mathbb P[\text{line(x, y, l, c)}] = \theta_{line} \times \frac{1}{HW\; max(H,W) \; C}$
+- $\mathbb P[\text{rec(x1, y1, x2, y2, c)}] = \theta_{rec} \times \frac{1}{H^2W^2C}$
+- $\mathbb P[\text{bitmap(x1, y1, x2, y2, c)}] = \theta_{bitmap} \times \frac{1}{H^2W^2C} \times Dirichlet(\text{bitmap})$ In a bitmap, you don't only have to determine its position and color, you also need the probability of actually producing a bitmap of such pattern.
+
+Here, we make two pretty big assumptions: Each command is drawn independently. For line/rec/bitmap, when its start point is determined, end point is then drawn independently. 
+
+### Interpreting Result
+
+Since we defined such a probability distribution, when we look at the search results, if two costs are $x$ units away, that means one is $e^x$ more likely to appear than the other one. If you see two results 5-10 units away, then our probability distribution prefers one strongly over the other. 
+
+### Search for Best Parameters
+
+Next we will have to search for the best cost function. That is to search the four parameters we have $(\alpha, \theta_{line}, \theta_{rec}, \theta_{bitmap})$, where $\alpha$ is for Dirichlet distribution. Note since $\theta_{line} + \theta_{rec} + \theta_{bitmap} = 1$, we actually only have to search for 3. 
+
+After say searching 100 results, we want to look at where is the correct program? ("Correct" is defined by us and is just the result we want). Is it the 3rd? 5th? <- meaning good or 50th? <- meaning bad. We also want to look at the gap between our desired result and the top result. Is the gap big? 
+

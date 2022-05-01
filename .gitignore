@@ -1,13 +1,13 @@
 Resources/
+ARCdata/
 vhe_impl/
 *.pyc
 vhe/.ipynb_checkpoints/
 *.p
 .vscode/
 vhe/train.sub
+
 GARC/test.py
-ARCdata/apps/
-ARCdata/data/
 GARC/samples/
 .idea/
 questions.md
