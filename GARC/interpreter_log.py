@@ -12,7 +12,7 @@ from obj_a_log import *
 from scipy.special import loggamma
 
 RUNTIME = 600.0
-WANTED_RESULTS_NUM = 10
+WANTED_RESULTS_NUM = 1000
 PRINT_FREQUENCY = 100
 SERVER = True
 # parent_dir = os.path.dirname(os.getcwd())
@@ -63,7 +63,7 @@ def dot(xlen, ylen, x, y, c):
 	obj_canvas = np.zeros((xlen, ylen), dtype = int)
 	mask_canvas = np.array(obj_canvas, dtype = bool)
 	obj_canvas[x, y] = c
-	mask_canvas[x, y] = False
+	mask_canvas[x, y] = True
 	return obj_canvas, mask_canvas
 
 def rectangle(xlen, ylen, x, y, xl, yl, c):
@@ -167,10 +167,29 @@ def Astar(target):
 	target_colors += [Color.Black] # always include black
 	target_colors_num = len(target_colors)
 
+	def norm_factor():
+		# line_bitmap = dirchilet_multinom_cost([max(xlen, ylen), 0], args.alpha) + np.log(target_colors_num)
+		# rec_bitmap = dirchilet_multinom_cost([area, 0], args.alpha) + np.log(target_colors_num)
+		# dot_bitmap = dirchilet_multinom_cost([1, 0], args.alpha) + np.log(target_colors_num)
+
+		# print("Calculating Bitmap Factor")
+		# print("normal line " +  str(line_cost) + " | line as bitmap " + str(line_bitmap))
+		# print("normal rec " +  str(rec_cost) + " | rec as bitmap " + str(rec_bitmap))
+		# print("normal dot " +  str(dot_cost) + " |  dot as bitmap " + str(dot_bitmap))
+		# factor = max(line_cost / line_bitmap, rec_cost / rec_bitmap, dot_cost / dot_bitmap)
+		# print("Bitmap Factor is " + str(factor) +"\n")
+
+		"不对，应该取最小的 rec line dot 而不是最大的面积，最小的面积才能有最小的dirichlet score，才能算出最大的 factor"
+		dot_bitmap = dirchilet_multinom_cost([1, 0], args.alpha) + np.log(target_colors_num)
+		factor = rec_cost / dot_bitmap
+		print("Bitmap Factor is " + str(factor) +"\n")
+		return factor
+
 	dot_cost = np.log(area) + np.log(target_colors_num)
 	line_cost = np.log(area * max(xlen, ylen) * target_colors_num)
 	rec_cost = 2 * np.log(area) + np.log(target_colors_num)
-	baseline_cost = line_cost
+	baseline_cost = rec_cost
+	bitmap_factor = 1 # * norm_factor()
 	new_object_cost = 1 # user-defined new object cost
 	cheating_cost = area # user-defined all cover cost
 
@@ -263,7 +282,8 @@ def Astar(target):
 						# 					* (1 - sum(sum(this_bitmap_mask)) / (xl*yl))
 										#   * entropy(bitmap[x:x+xl, y:y+yl])
 						colored_bits = sum(sum(this_bitmap_mask))
-						this_command_cost = dirchilet_multinom_cost([colored_bits, xl*yl - colored_bits], args.alpha) + np.log(10)
+						this_command_cost = dirchilet_multinom_cost([colored_bits, xl*yl - colored_bits], args.alpha) + np.log(target_colors_num)
+						this_command_cost = bitmap_factor * this_command_cost
 						
 						bitmaps.append(bitmap)
 						bitmap_masks.append(this_bitmap_mask)
@@ -443,7 +463,7 @@ if __name__ == "__main__":
 	# 画斜线
 	# canvas = np.array(read_task("05269061", 1, False))
 	# Rand Object
-	# canvas = np.array(read_task("0520fde7", 2, True))
+	canvas = np.array(read_task("0520fde7", 2, True))
 
 	# canvas = np.array(read_task("06df4c85", 2, True))
 
