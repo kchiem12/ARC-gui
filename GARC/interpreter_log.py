@@ -1,6 +1,7 @@
 import argparse
 import json
 import queue
+from tarfile import RECORDSIZE
 import time
 import cProfile
 import os
@@ -185,10 +186,12 @@ def Astar(target):
 		print("Bitmap Factor is " + str(factor) +"\n")
 		return factor
 
-	dot_cost = np.log(area) + np.log(target_colors_num)
-	line_cost = np.log(area * max(xlen, ylen) * target_colors_num)
-	rec_cost = 2 * np.log(area) + np.log(target_colors_num)
-	baseline_cost = rec_cost
+	theta_dot_cost, theta_line_cost, theta_rec_cost = 0
+	theta_bm_cost = 0
+	dot_cost = np.log(area) + np.log(target_colors_num) + theta_dot_cost
+	line_cost = np.log(area * max(xlen, ylen) * target_colors_num) + theta_line_cost
+	rec_cost = 2 * np.log(area) + np.log(target_colors_num) + theta_rec_cost
+	baseline_cost = 2 * np.log(area) + np.log(target_colors_num)
 	bitmap_factor = 1 # * norm_factor()
 	new_object_cost = 1 # user-defined new object cost
 	cheating_cost = area # user-defined all cover cost
@@ -272,7 +275,6 @@ def Astar(target):
 			for y in range(ylen):
 				for xl in range(1, xlen - x + 1):
 					for yl in range(1, ylen - y + 1):
-						# this_bitmap = np.zeros((xlen, ylen), dtype = int)
 						this_bitmap_mask = np.full((xlen, ylen), False)
 						this_command = obj("cheat", x, y, c, xlen = xl, ylen = yl)
 						
@@ -282,7 +284,7 @@ def Astar(target):
 						# 					* (1 - sum(sum(this_bitmap_mask)) / (xl*yl))
 										#   * entropy(bitmap[x:x+xl, y:y+yl])
 						colored_bits = sum(sum(this_bitmap_mask))
-						this_command_cost = dirchilet_multinom_cost([colored_bits, xl*yl - colored_bits], args.alpha) + np.log(target_colors_num)
+						this_command_cost = dirchilet_multinom_cost([colored_bits, xl*yl - colored_bits], args.alpha) + baseline_cost + theta_bm_cost
 						this_command_cost = bitmap_factor * this_command_cost
 						
 						bitmaps.append(bitmap)
@@ -387,7 +389,7 @@ def Astar(target):
 			# 	print("MIGHT BE BECAUSE OF HERE??")
 			
 			hrstc_dis = heuristic_distance(next_canvas)
-			next_command_cost = this_command_cost + bitmap_costs[i] + baseline_cost			
+			next_command_cost = this_command_cost + bitmap_costs[i]
 			next_cost = next_command_cost + hrstc_dis
 			next_state = state(next_canvas, next_cost, next_command_cost, this_state, next_command)
 			
@@ -456,14 +458,14 @@ if __name__ == "__main__":
 	# test for diagonal line
 	# canvas = np.array([[0,0,1],[0,1,0],[1,0,0]])
 	# test for square
-	canvas = np.array([[0,1,1],[0,1,1],[1,0,0]])
+	# canvas = np.array([[0,1,1],[0,1,1],[1,0,0]])
 
 	# 切方块
 	# canvas = np.array(read_task("1190e5a7", 0, True))
 	# 画斜线
-	# canvas = np.array(read_task("05269061", 1, False))
+	canvas = np.array(read_task("05269061", 1, False))
 	# Rand Object
-	canvas = np.array(read_task("0520fde7", 2, True))
+	# canvas = np.array(read_task("0520fde7", 2, True))
 
 	# canvas = np.array(read_task("06df4c85", 2, True))
 
