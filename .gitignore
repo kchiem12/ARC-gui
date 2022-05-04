@@ -1,3 +1,4 @@
+# VHE 
 Resources/
 ARCdata/
 vhe_impl/
@@ -7,12 +8,19 @@ vhe/.ipynb_checkpoints/
 .vscode/
 vhe/train.sub
 
+# Personal
 GARC/test.py
-GARC/samples/
-.idea/
 questions.md
 GARC/notes.md
+
+# Local
+GARC/samples/
+.idea/
+
+# Server
 *.err
 *.out
 GARC/search.stats
 res.txt
+GARC/run-search.sub
+GARC/search-alpha.sh
