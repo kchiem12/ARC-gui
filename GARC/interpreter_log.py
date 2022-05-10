@@ -1,16 +1,17 @@
 import argparse
+from functools import reduce
 import json
 import queue
-from tarfile import RECORDSIZE
 import time
 import cProfile
 import os
+import random
 from API.canvas import *
 from API.object import *
 from API.color import *
 from API.util import *
 from obj_a_log import *
-from scipy.special import loggamma
+from scipy.special import loggamma, logsumexp
 
 RUNTIME = 600.0
 WANTED_RESULTS_NUM = 1000
@@ -23,11 +24,33 @@ arc_data_dir = "/home/ly373/ARC/ARCdata/data/training/" if SERVER \
 
 parser = argparse.ArgumentParser()
 # data I/O
-parser.add_argument('-a', '--alpha', type = float,
-					default = 1, help='alpha value in Dirichlet Distribution')
+parser.add_argument('-a', '--alpha', type = float, default = 1.0, 
+					help='alpha value in Dirichlet Distribution')
+parser.add_argument('-th','--theta', nargs='+', type = float,
+					default = [1.0, 1.0, 1.0, 1.0],
+					help='four theta value of dot, line, rectangle, and bitmap')
+parser.add_argument('-r', '--random-search', action = "store_true",
+					# type = bool, default = False,
+					help='If set to True, ignores all hyperparameter arguments and draw them at random')
 
 args = parser.parse_args()
-print(args.alpha)
+if args.random_search: 
+	alpha_range = list(range(-10, 5))
+	log_theta_range = list(range(20))
+	args.alpha = np.exp(random.choice(alpha_range))
+	log_thetas = [random.choice(log_theta_range) for _ in range(4)]
+	args.theta = list(map(lambda t : t - logsumexp(log_thetas), log_thetas))
+else:
+	args.theta = list(np.multiply(-1, args.theta))
+	args.theta = list(map(lambda t : t - logsumexp(args.theta), args.theta))
+
+print("Alpha: ", args.alpha)
+print("Theta Probabilities: ", end="")
+print(["{0:0.2f}".format(t) for t in np.exp(args.theta) * 100])
+# we now have the log probability, but -log probability is the cost
+args.theta = list(np.multiply(-1, args.theta))
+print("Theta Costs: ", end="")
+print(["{0:0.2f}".format(t) for t in args.theta])
 
 def array_to_canvas(arr):
 	"""
@@ -172,7 +195,6 @@ def Astar(target):
 		# line_bitmap = dirchilet_multinom_cost([max(xlen, ylen), 0], args.alpha) + np.log(target_colors_num)
 		# rec_bitmap = dirchilet_multinom_cost([area, 0], args.alpha) + np.log(target_colors_num)
 		# dot_bitmap = dirchilet_multinom_cost([1, 0], args.alpha) + np.log(target_colors_num)
-
 		# print("Calculating Bitmap Factor")
 		# print("normal line " +  str(line_cost) + " | line as bitmap " + str(line_bitmap))
 		# print("normal rec " +  str(rec_cost) + " | rec as bitmap " + str(rec_bitmap))
@@ -186,16 +208,37 @@ def Astar(target):
 		print("Bitmap Factor is " + str(factor) +"\n")
 		return factor
 
-	theta_dot_cost, theta_line_cost, theta_rec_cost = 0
-	theta_bm_cost = 0
+	theta_dot_cost, theta_line_cost, theta_rec_cost, theta_bm_cost = args.theta 
 	dot_cost = np.log(area) + np.log(target_colors_num) + theta_dot_cost
 	line_cost = np.log(area * max(xlen, ylen) * target_colors_num) + theta_line_cost
 	rec_cost = 2 * np.log(area) + np.log(target_colors_num) + theta_rec_cost
 	baseline_cost = 2 * np.log(area) + np.log(target_colors_num)
 	bitmap_factor = 1 # * norm_factor()
-	new_object_cost = 1 # user-defined new object cost
-	cheating_cost = area # user-defined all cover cost
+	# new_object_cost = 1 # user-defined new object cost
+	# cheating_cost = area # user-defined all cover cost
 
+	""" 
+	Duplicate Code with Bitmap Cost Preprocessing
+	Need to Change Both sections when making changes
+	"""
+	def bitmap_cost(bitmap):
+		bitmap = np.array(bitmap, dtype = bool)
+		xl = len(canvas)
+		yl = len(canvas[0])
+		colored_bits = sum(sum(bitmap))
+		cbitmap = dirchilet_multinom_cost([colored_bits, xl*yl - colored_bits], args.alpha) \
+				+ baseline_cost + theta_bm_cost
+		return cbitmap
+
+	def get_desired_cost(prog):
+		res = 0
+		res += prog["dot"] * dot_cost
+		res += prog["line"] * line_cost
+		res += prog["rec"] * rec_cost
+		res = reduce(lambda x,y : x + bitmap_cost(y), prog["bitmap"], res)
+		return res
+	
+	desired_cost = get_desired_cost(sol.desired_program)
 	final_states = []
 	
 	def diff_to_target(canvas): return sum(sum(canvas != target))
@@ -284,8 +327,12 @@ def Astar(target):
 						# 					* (1 - sum(sum(this_bitmap_mask)) / (xl*yl))
 										#   * entropy(bitmap[x:x+xl, y:y+yl])
 						colored_bits = sum(sum(this_bitmap_mask))
+						
+						""" Duplicate Code with Bitmap Cost Preprocessing, 
+							need to Change Both sections when making changes
+							This section is kept for better performance. """
 						this_command_cost = dirchilet_multinom_cost([colored_bits, xl*yl - colored_bits], args.alpha) + baseline_cost + theta_bm_cost
-						this_command_cost = bitmap_factor * this_command_cost
+						# this_command_cost = bitmap_factor * this_command_cost
 						
 						bitmaps.append(bitmap)
 						bitmap_masks.append(this_bitmap_mask)
@@ -293,6 +340,7 @@ def Astar(target):
 						bitmap_costs.append(this_command_cost)
 
 
+	""" Start to Search """
 	start_time = time.time()
 	counter = 0 
 	# previous_state = None
@@ -365,8 +413,8 @@ def Astar(target):
 			# 	return time.time() - start_time, next_state
 			if hrstc_dis == 0: 
 				final_states.append(next_state)
-				# print("FOUND")
-				if len(final_states) == WANTED_RESULTS_NUM: return final_states
+				if next_cost == desired_cost: print("Found Desired Program at iteration %d" %(total_iterations))
+				if len(final_states) == WANTED_RESULTS_NUM: return final_states, desired_cost
 
 			if hash(next_state) not in vis: q.put(next_state)
 
@@ -403,8 +451,8 @@ def Astar(target):
 			# 	return time.time() - start_time, next_state
 			if hrstc_dis == 0: 
 				final_states.append(next_state)
-				# print("FOUND")
-				if len(final_states) == WANTED_RESULTS_NUM: return final_states
+				if next_cost == desired_cost: print("Found Desired Program at iteration %d" %(total_iterations))
+				if len(final_states) == WANTED_RESULTS_NUM: return final_states, desired_cost
 
 			if hash(next_state) not in vis: q.put(next_state)
 
@@ -450,8 +498,9 @@ inter_hash = hash_canvas(inter_state)
 
 if __name__ == "__main__":
 
-	profiler = cProfile.Profile()
-	profiler.enable()
+	if SERVER:
+		profiler = cProfile.Profile()
+		profiler.enable()
 
 	# test for parallel and vertical line
 	# canvas = np.array(([5,5,5], [0,0,3], [0,0,3]))
@@ -461,13 +510,19 @@ if __name__ == "__main__":
 	# canvas = np.array([[0,1,1],[0,1,1],[1,0,0]])
 
 	# 切方块
+	TASKNAME, TASKNUM, ISINPUT = "1190e5a7", 1, True
+
+	# 切方块
 	# canvas = np.array(read_task("1190e5a7", 0, True))
 	# 画斜线
-	canvas = np.array(read_task("05269061", 1, False))
+	# canvas = np.array(read_task("05269061", 1, False))
 	# Rand Object
 	# canvas = np.array(read_task("0520fde7", 2, True))
 
 	# canvas = np.array(read_task("06df4c85", 2, True))
+
+	canvas = np.array(read_task(TASKNAME, TASKNUM, ISINPUT))
+	sol = __import__("p_"+TASKNAME+"_"+str(TASKNUM))
 
 	canvas = array_to_canvas(canvas)
 	display(canvas)
@@ -475,13 +530,13 @@ if __name__ == "__main__":
 	# print(time_used)
 	# print_path_state(final_state)
 
-	res = Astar(canvas)
+	predictions, solution_cost = Astar(canvas)
 
 	if SERVER:
 		profiler.disable()
 		profiler.dump_stats("/home/ly373/ARC/GARC/search.stats")
 	
-	print("This is with alpha being %f" %(args.alpha))
+	print("Looking for a program with cost " + str(solution_cost))
 	print("Used a total %d iterations" %(total_iterations))
 
 	# for i in range(len(res)):
@@ -490,10 +545,15 @@ if __name__ == "__main__":
 	# 	print("---------%d---------" %(i))
 
 	print ("!!!!!!!!!! SORTED !!!!!!!!!!")
-	ress = sorted_states_by_command_cost(res)
-	for i in range(len(ress)):
+	sorted_prediction = sorted_states_by_command_cost(predictions)
+	solution_rank = -1
+	for i in range(len(sorted_prediction)):
+		if sorted_prediction[i].command_cost == solution_cost:
+			solution_rank = i+1
+	print("solution ranked at " + str(solution_rank) \
+		  if solution_rank > 0 else "solution not found")
+	for i in range(len(sorted_prediction)):
 		print("---------%d---------" %(i))
-		print_path_state(ress[i])
+		print_path_state(sorted_prediction[i])
 		print("---------%d---------" %(i))
-	x = 1
 	
