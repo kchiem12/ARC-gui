@@ -24,8 +24,6 @@ class state():
 		return s
 
 
-
-
 class obj():
 	def __init__(self, tp = "", xs = 0, ys = 0, color = 0, l = 0, xlen = 0, ylen = 0):
 		self.type = tp
@@ -44,38 +42,10 @@ class obj():
 		if self.type == "dot": return "dot" + general
 		if self.type == "vertical": return "vertical line of length " + str(self.len) + general
 		if self.type == "parallel": return "parallel line of length " + str(self.len) + general
-		if self.type == "diagonal": return "diagonal line of length " + str(self.len) + general
+		if self.type == "diagonal_ur" or self.type == "diagonal_lr": return "diagonal line of length " + str(self.len) + general
 		if self.type == "rectangle": return "rectangle of xlength " + str(self.xlen) + " ylength " + str(self.ylen) + general
 		if self.type == "new": return "a new object"
 		if self.type == "cheat": return "bitmap of xlength " + str(self.xlen) + " ylength " + str(self.ylen) + general
 
 	def __repr__(self):
 		return self.__str__()
-
-def _line_at(l, x, y, c):
-	o = obj()
-	o.len = l
-	o.xs = x
-	o.ys = y
-	o.color = c
-	return o
-
-def vertical_line_at(l, x, y, c):
-	o = _line_at(l, x, y, c)
-	o.type = "vertical"
-	return o
-
-def parallel_line_at(l, x, y, c):
-	o = _line_at(l, x, y, c)
-	o.type = "parallel"
-	return o
-
-def diagonal_line_at(l, x, y, c):
-	o = _line_at(l, x, y, c)
-	o.type = "diagonal"
-	return o
-
-def new_object():
-	o = obj()
-	o.type = "new"
-	return o
