@@ -16,6 +16,8 @@ GARC/notes.md
 # Local
 GARC/samples/
 .idea/
+GARC/p_05269061*
+GARC/p_0520fde7*
 
 # Server
 *.err
@@ -24,3 +26,6 @@ GARC/search.stats
 res.txt
 GARC/run-search.sub
 GARC/search-alpha.sh
+
+# Not Needed 
+*.txt

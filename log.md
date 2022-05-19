@@ -189,9 +189,9 @@ Our job is to find what $\alpha$ gives us 2 small bitmaps is better than 1 big b
 - visualization
 - argument parsing for filename, alpha
 
-## 2022-04-29
+### 2022-04-29
 
-### Logic of Cost
+#### Logic of Cost
 
 Today we talked more about the logic of how we defined our search cost. Basically, we are **defining a distribution of the programs and the cost is negative log of the probability of such a program is sampled**. 
 $$
@@ -211,13 +211,72 @@ Next we go to define the probability of sampling a specific command, where $\the
 
 Here, we make two pretty big assumptions: Each command is drawn independently. For line/rec/bitmap, when its start point is determined, end point is then drawn independently. 
 
-### Interpreting Result
+#### Interpreting Result
 
 Since we defined such a probability distribution, when we look at the search results, if two costs are $x$ units away, that means one is $e^x$ more likely to appear than the other one. If you see two results 5-10 units away, then our probability distribution prefers one strongly over the other. 
 
-### Search for Best Parameters
+#### Search for Best Parameters
 
 Next we will have to search for the best cost function. That is to search the four parameters we have $(\alpha, \theta_{line}, \theta_{rec}, \theta_{bitmap})$, where $\alpha$ is for Dirichlet distribution. Note since $\theta_{line} + \theta_{rec} + \theta_{bitmap} = 1$, we actually only have to search for 3. 
 
 After say searching 100 results, we want to look at where is the correct program? ("Correct" is defined by us and is just the result we want). Is it the 3rd? 5th? <- meaning good or 50th? <- meaning bad. We also want to look at the gap between our desired result and the top result. Is the gap big? 
 
+### 2022-05-04 OH
+
+- Q: In 05269061, the cost of a bitmap is around 20, but a line is 7.22, np.log(0.01) is -4.60517018598809. We need a really small $\theta_{bitmap}$ to compensate for the cost of 1 bitmap vs 6 lines. 
+
+  A: This is a problem with strong "global" patterns, i.e. you see there are so many lines, so you are more likely to draw lines. Therefore, our previous assumption about drawing independently doesn't hold at all. We should **choose problems without strong global patterns**.
+
+- Q: How do I compare the results? Is there a way to automatically doing it? Or just do it manually?
+
+  A: instead of drawing out all the possible paths to desired solution, you can just use its cost. (Two solutions of the same cost contain different commands is extremely unlikely) 
+
+- What is a good range to do random search?
+
+  A: $\log \theta \in uniform[0,20]$
+
+Good thing about defining a cost function as a probability distribution:
+$$
+cost(\theta, \alpha, prog) \to \mathbb R \\
+\hat {prog} = \min_{prog} cost(\theta, \alpha, prog) \\
+prog^* = \text{the actual desired program} \\
+\mathcal L = \max (0, cost(\theta, \alpha, prog^*) - cost(\theta, \alpha, \hat{prog}))
+$$
+Note contrary to intuition, most of the time, we will actually have $cost(\theta, \alpha, prog^*) \ge cost(\theta, \alpha, \hat{prog})$. That is because we defined $\hat{prog}$ to be the one with lowest loss. And most of the time, our $\theta$ and $\alpha$ are bad in describing the cost, so our local best result, even though worse than the global best result, has a lower cost. 
+
+The definition of the loss function says that what we want eventually is $cost(\theta, \alpha, prog^*) - cost(\theta, \alpha, \hat{prog}) \lt 0$, so $cost(\theta, \alpha, prog^*) \lt cost(\theta, \alpha, \hat{prog})$. That is to push down the desired program cost and push up the predicted program cost. Then we can do a gradient descent on $\grad_\theta \mathcal L, \grad_\alpha \mathcal L$ 
+
+However, since we have a probability distribution, if we push down the desired program cost, the predicted program cost should automatically go up (probability of choosing the desired gets higher, probability of choosing the predicted of course gets lower) Therefore, we don't have to do the gradient search thing. 
+
+Some other things: 
+
+- use `logsumexp` to normalize your function:
+  $$
+  \log \theta_1, \log \theta_2 \in uniform[0,20]\\
+  \bar\theta_1 = \frac {\theta_1} {\theta_1+\theta_2}, \bar\theta_2 = \frac {\theta_2} {\theta_1+\theta_2} \\
+  \log \bar \theta_1 = \log \frac {\theta_1} {\theta_1+\theta_2} = \log \theta_1 - \log(\theta_1+\theta_2)\\
+  \log \bar \theta_i = \log \theta_i - \text {logsumexp}([\theta_1, \theta_2, \dots, \theta_n])
+  $$
+  
+- checkout Structured Perceptron
+
+
+
+Random Search
+
+https://towardsdatascience.com/hyperparameter-tuning-with-grid-search-and-random-search-6e1b5e175144
+
+
+
+### 2022-05-13
+
+Take all parameters at random and we want a same set of parameters works universally for all problems. However, we can set the range from which we draw the parameters to indicate what value we want. So $\log \theta_{bm} = [0,5]$ while all the others from $[0,20]$. $\log \alpha = [-10,5]$ 
+
+We now have tasks: 
+
+- test program on multiple problems and look at the overall results (e.g. can try to sum up the difference between our prediction and desired program across all problems)
+- Write a visualization UI to draw out all the objects we detected
+
+Some problems we can try first: 3, 6I, 7, 9, 11, 12, 13, 14, 15, 17
+
+Later in our implementation, we may change our Dirichlet Distribution to Chinese Restaurant Process (each customer choosing to either sit at an occupied table with a probability proportional to the number of customers already there or an unoccupied table) to simulate the fact that if all the objects we've drawn so far are lines, we should be more likely to choose lines. 
