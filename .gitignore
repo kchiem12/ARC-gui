@@ -26,6 +26,9 @@ GARC/search.stats
 res.txt
 GARC/run-search.sub
 GARC/search-alpha.sh
+GARC/*.sub
+GARC/*.sh
+GARC/Makefile
 
 # Not Needed 
 *.txt
