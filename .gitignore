@@ -28,6 +28,7 @@ GARC/search-alpha.sh
 GARC/*.sub
 GARC/*.sh
 GARC/Makefile
+GARC/p_*.py
 
 # Not Needed 
 *.txt

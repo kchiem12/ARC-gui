@@ -3,6 +3,7 @@ import json
 import queue
 import time
 import cProfile
+import tracemalloc
 import os
 from API.canvas import *
 from API.color import *
@@ -10,11 +11,12 @@ from obj_a_log import *
 from scipy.special import loggamma, logsumexp
 
 RUNTIME = 600.0
-WANTED_RESULTS_NUM = 100
-TOPRINT_RESULTS_NUM = 5
-assert TOPRINT_RESULTS_NUM < WANTED_RESULTS_NUM
-PRINT_FREQUENCY = 100
+WANTED_RESULTS_NUM = 1000
+TOPRINT_RESULTS_NUM = 10
+assert TOPRINT_RESULTS_NUM <= WANTED_RESULTS_NUM
+PRINT_FREQUENCY = 10000000
 SERVER = True
+ENABLE_PROFILER = False
 # parent_dir = os.path.dirname(os.getcwd())
 arc_data_dir = "/home/ly373/ARC/ARCdata/data/training/" if SERVER \
 			   else os.path.join(os.getcwd(), "ARCdata\\data\\training\\")
@@ -423,21 +425,25 @@ class Astar():
 	def search_one(self, taskname, tasknum, isinput):
 		
 		canvas = np.array(read_task(taskname, tasknum, isinput))
-		sol = __import__("p_"+taskname)
+		sol = __import__("p_" + taskname + ("_i" if isinput else "_o"))
 		self.solution_program = sol.desired_programs[tasknum]
 
 		canvas = array_to_canvas(canvas)
 		display(canvas)
 
-		if SERVER:
+		if ENABLE_PROFILER:
 			profiler = cProfile.Profile()
 			profiler.enable()
+			tracemalloc.start()
 
 		predictions, solution_cost = self.search_aux(canvas)
 
-		if SERVER:
+		if ENABLE_PROFILER:
 			profiler.disable()
 			profiler.dump_stats("/home/ly373/ARC/GARC/search.stats")
+
+			print("maximum memmory usage is " + str(tracemalloc.get_traced_memory()[1] / 1024 / 1024 / 1024) + " Gb")
+			tracemalloc.stop()
 		
 		print("Looking for a program with cost " + str(solution_cost))
 		print("Used a total %d iterations" %(self.total_iterations))
@@ -476,7 +482,7 @@ if __name__ == "__main__":
 	# canvas = np.array([[0,1,1],[0,1,1],[1,0,0]])
 
 	# 切方块
-	TASKNAME, TASKNUM, ISINPUT = "1190e5a7", 1, True
+	TASKNAME, TASKNUM, ISINPUT = "1190e5a7", 0, True
 
 	# 切方块
 	# canvas = np.array(read_task("1190e5a7", 0, True))
@@ -488,8 +494,10 @@ if __name__ == "__main__":
 	# canvas = np.array(read_task("06df4c85", 2, True))
 
 	# search_one(TASKNAME, TASKNUM, ISINPUT)
+
+	TASKNAME, TASKNUM, ISINPUT = "05f2a901", 1, True
 	
-	alpha, theta = 1.0, [1.0, 1.0, 1.0, 1.0]
+	alpha, theta = 0.0009118819655545162, [14.0, 15.0, 15.0, 11.0]
 	theta = list(np.multiply(-1, theta))
 	theta = list(map(lambda t : t - logsumexp(theta), theta))
 	print("Alpha: ", alpha)
