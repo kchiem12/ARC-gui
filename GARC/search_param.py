@@ -1,3 +1,4 @@
+from statistics import mean
 from interpreter_log import *
 import argparse
 
@@ -25,7 +26,7 @@ def draw_random_alpha_theta():
 
 if args.random_search: 
 	# When we randomly draw, we draw the value of alpha and the value of theta
-	alpha_range = list(range(-10, 5))
+	alpha_range = list(range(-10, 10))
 	log_theta_range = list(range(20))
 	args.alpha = np.exp(random.choice(alpha_range))
 	log_thetas = [random.choice(log_theta_range) for _ in range(4)]
@@ -50,24 +51,31 @@ print("\n\n\n\n\n")
 astar = Astar(args.alpha, args.theta)
 
 tasks = [
-	("1190e5a7", True), 
+	("05f2a901", 0, True), 
+	("05f2a901", 1, True), 
+	("05f2a901", 2, True), 
+	("08ed6ac7", 0, True),
+	("1190e5a7", 0, True), 
+	("1190e5a7", 1, True), 
+	("025d127b", 0, True), 
+	("025d127b", 1, True), 
+	("0a938d79", 0, True), 
+	("0a938d79", 1, True),  
+
 	# ("05269061", True)
 ]
 
 task_cost = []
 for task in tasks:
-	this_task_cost = []
-	for tasknum in range(3):
-		# taskname, tasknum, isinput = "1190e5a7", 1, True
-		(taskname, isinput) = task
+	(taskname, tasknum, isinput) = task
 
-		print("vvvvvvvv %s %d vvvvvvvv" %(taskname, tasknum))
-		diff = astar.search_one(taskname, tasknum, isinput)
-		this_task_cost.append(diff)
-		astar.reset()
-		print("\n\n")
-	task_cost.append(this_task_cost)
+	print("vvvvvvvv %s %d vvvvvvvv" %(taskname, tasknum))
+	diff = astar.search_one(taskname, tasknum, isinput)
+	astar.reset()
+	print("\n\n")
+	task_cost.append(diff)
 	print("\n\n\n\n\n")
 
+print(mean(task_cost))
 for task in zip(tasks, task_cost): print(task)
 # search_multiple()
